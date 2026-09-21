@@ -2224,7 +2224,7 @@ function initSpaceCanvas() {
       vy: (Math.random() - 0.5) * 0.32,
       radius: Math.random() * 1.2 + 2.0,
       pulsePhase: Math.random() * Math.PI * 2,
-      color: i % 2 === 0 ? 'rgba(56, 189, 248,' : 'rgba(216, 180, 254,'
+      color: i % 4 === 0 ? 'rgba(16, 185, 129,' : 'rgba(56, 189, 248,'
     });
   }
 
