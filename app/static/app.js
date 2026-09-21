@@ -86,19 +86,22 @@ function getSatColor(id, index) {
  * Проверка доступности бэкенда и загрузка сценариев
  */
 async function initBackendConnection() {
-  setConnectionStatus('checking', 'Подключение к ядру ЦУП...');
+  setConnectionStatus('checking', 'Подключение к серверу...');
+  const wrapper = document.getElementById('connectionStatusWrapper');
   try {
     const res = await fetch('/api/scenarios', { method: 'GET' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const scenarios = await res.json();
     AppState.scenariosList = scenarios;
     AppState.isMockMode = false;
-    setConnectionStatus('online', 'ЯДРО ЦУП: ОНЛАЙН');
+    setConnectionStatus('online', 'СЕРВЕР ЦУП: ОНЛАЙН');
+    if (wrapper) wrapper.title = 'Подключено к живому бэкенду FastAPI (app/server.py). Модель спутников и алгоритм планирования работают в реальном времени.';
     populateScenariosSelect(scenarios);
   } catch (err) {
     console.warn('Бэкенд недоступен, переход в автономный режим:', err.message);
     AppState.isMockMode = true;
-    setConnectionStatus('mock', 'АВТОНОМНЫЙ РЕЖИМ');
+    setConnectionStatus('mock', 'ДЕМО-РЕЖИМ (ОФФЛАЙН)');
+    if (wrapper) wrapper.title = 'Сервер Python не запущен. Используются статические демонстрационные файлы.';
     await loadMockScenarios();
   }
 }
