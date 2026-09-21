@@ -1,8 +1,10 @@
 """Бэкенд сервиса на FastAPI.
 
 Держит сессии смены в памяти (по случайному id) и крутит модель организаторов
-(model/resource_env.py, model/operations.py) через простое правило из
-planner/baseline.py. Отдаёт JSON по /api/..., статику интерфейса — из
+(model/resource_env.py, model/operations.py) через один из наших
+планировщиков — planner/baseline.py (простое правило) или planner/smart.py
+(с оглядкой на энергию и окна связи, по умолчанию). Алгоритм выбирается при
+создании сессии. Отдаёт JSON по /api/..., статику интерфейса — из
 app/static/.
 
 Запуск: python3 app/server.py (или uvicorn app.server:app --reload)
@@ -27,11 +29,19 @@ from fastapi.staticfiles import StaticFiles
 
 from model.operations import Session
 from model.resource_env import load, validate
-from planner.baseline import decide_actions
+from planner.baseline import decide_actions as baseline_decide_actions
+from planner.smart import decide_actions as smart_decide_actions
 
 DATA_DIR = ROOT / 'data'
 STATIC_DIR = Path(__file__).resolve().parent / 'static'
 GOALS = ('priority', 'revenue')
+ALGORITHMS = ('baseline', 'smart')
+DEFAULT_ALGORITHM = 'smart'
+# Название и версия алгоритма — то, что уходит в run_metadata сохранённого результата.
+ALGORITHM_METADATA = {
+    'baseline': {'algorithm': 'baseline_deadline_priority_value', 'version': '1'},
+    'smart': {'algorithm': 'smart_lookahead', 'version': '1'},
+}
 
 app = FastAPI(title='Kosmohack sputniki backend')
 
@@ -84,24 +94,29 @@ def _require_goal(value: Any, name: str = 'goal') -> str:
 
 
 # ---------------------------------------------------------------------------
-# Планировщик вызывается отсюда — одна точка входа. Сейчас тут всегда простое
-# правило, цель смены на выбор действий не влияет. Когда будет настоящий
-# планировщик, менять только эту функцию.
+# Планировщик вызывается отсюда — одна точка входа. Дальше можно менять
+# только эту функцию, если появится ещё один алгоритм.
 # ---------------------------------------------------------------------------
-def plan_step(env, goal: str) -> dict[str, dict]:
-    return decide_actions(env)
+def plan_step(env, goal: str, algorithm: str) -> dict[str, dict]:
+    if algorithm == 'baseline':
+        return baseline_decide_actions(env)
+    # у smart.py своя терминология цели (priority/commercial), а в API мы
+    # назвали вторую цель revenue — переводим тут, в одном месте
+    smart_goal = 'commercial' if goal == 'revenue' else 'priority'
+    return smart_decide_actions(env, smart_goal)
 
 
-def run_to_end(session: Session, goal: str) -> None:
+def run_to_end(session: Session, goal: str, algorithm: str) -> None:
     total = session.env.s['time']['steps']
     while session.env.k < total:
-        session.advance(plan_step(session.env, goal))
+        session.advance(plan_step(session.env, goal, algorithm))
 
 
 class SessionRecord:
-    def __init__(self, session: Session, goal: str):
+    def __init__(self, session: Session, goal: str, algorithm: str):
         self.session = session
         self.goal = goal
+        self.algorithm = algorithm
         self.lock = threading.Lock()
 
 
@@ -423,14 +438,18 @@ def create_custom_scenario(payload: dict = Body(default={})):
 @app.post('/api/sessions')
 def create_session(payload: dict = Body(default={})):
     goal = _require_goal(payload.get('goal', 'priority'))
+    algorithm = payload.get('algorithm', DEFAULT_ALGORITHM)
+    if algorithm not in ALGORITHMS:
+        raise ApiError(f'algorithm должен быть одним из {list(ALGORITHMS)}')
     scenario = resolve_scenario(payload)
 
+    meta = ALGORITHM_METADATA[algorithm]
     session = Session(scenario, run_metadata={
-        'goal': goal, 'algorithm': 'baseline_deadline_priority_value',
-        'version': '1', 'parameters': {},
+        'goal': goal, 'algorithm': meta['algorithm'],
+        'version': meta['version'], 'parameters': {},
     })
     session_id = uuid.uuid4().hex
-    record = SessionRecord(session, goal)
+    record = SessionRecord(session, goal, algorithm)
     with SESSIONS_LOCK:
         SESSIONS[session_id] = record
     return build_state(session_id, record)
@@ -446,7 +465,7 @@ def step_session(session_id: str, payload: dict = Body(default={})):
         for _ in range(n):
             if session.env.k >= total:
                 break
-            session.advance(plan_step(session.env, record.goal))
+            session.advance(plan_step(session.env, record.goal, record.algorithm))
         return build_state(session_id, record)
 
 
@@ -460,7 +479,7 @@ def run_session(session_id: str, payload: dict = Body(default={})):
         if until_step < session.env.k:
             raise ApiError('until_step меньше текущего шага — назад откатить нельзя')
         while session.env.k < until_step:
-            session.advance(plan_step(session.env, record.goal))
+            session.advance(plan_step(session.env, record.goal, record.algorithm))
         return build_state(session_id, record)
 
 
@@ -492,8 +511,8 @@ def compare_session(session_id: str, payload: dict = Body(default={})):
         at_step = record.session.env.k
         fork_a = record.session.fork()
         fork_b = record.session.fork()
-        run_to_end(fork_a, goal_a)
-        run_to_end(fork_b, goal_b)
+        run_to_end(fork_a, goal_a, record.algorithm)
+        run_to_end(fork_b, goal_b, record.algorithm)
 
         summary_a = compare_summary(fork_a)
         summary_b = compare_summary(fork_b)
