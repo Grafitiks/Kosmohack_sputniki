@@ -520,6 +520,10 @@ def get_result(session_id: str):
         return record.session.result()
 
 
+# StaticFiles падает при старте, если папки физически нет (например, свежий
+# клон репозитория без фронтенда) — создаём пустую, чтобы сервер не падал.
+STATIC_DIR.mkdir(parents=True, exist_ok=True)
+
 # Статика — после всех /api/... роутов, чтобы они не перекрылись.
 app.mount('/', StaticFiles(directory=str(STATIC_DIR), html=True), name='static')
 
