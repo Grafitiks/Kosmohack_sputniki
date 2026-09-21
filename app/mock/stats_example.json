@@ -1,0 +1,469 @@
+{
+ "step": 48,
+ "satellites": [
+  {
+   "id": "S01",
+   "steps_total": 48,
+   "job_steps": 2,
+   "calibration_steps": 0,
+   "idle_steps": 46,
+   "job_share": 0.0417,
+   "calibration_share": 0.0,
+   "idle_share": 0.9583,
+   "idle_reasons": {
+    "no_work": 43,
+    "other": 3
+   }
+  },
+  {
+   "id": "S02",
+   "steps_total": 48,
+   "job_steps": 0,
+   "calibration_steps": 0,
+   "idle_steps": 48,
+   "job_share": 0.0,
+   "calibration_share": 0.0,
+   "idle_share": 1.0,
+   "idle_reasons": {
+    "no_work": 46,
+    "other": 2
+   }
+  },
+  {
+   "id": "S03",
+   "steps_total": 48,
+   "job_steps": 1,
+   "calibration_steps": 0,
+   "idle_steps": 47,
+   "job_share": 0.0208,
+   "calibration_share": 0.0,
+   "idle_share": 0.9792,
+   "idle_reasons": {
+    "no_work": 46,
+    "other": 1
+   }
+  },
+  {
+   "id": "S04",
+   "steps_total": 48,
+   "job_steps": 2,
+   "calibration_steps": 0,
+   "idle_steps": 46,
+   "job_share": 0.0417,
+   "calibration_share": 0.0,
+   "idle_share": 0.9583,
+   "idle_reasons": {
+    "other": 5,
+    "no_work": 41
+   }
+  },
+  {
+   "id": "S05",
+   "steps_total": 48,
+   "job_steps": 0,
+   "calibration_steps": 0,
+   "idle_steps": 48,
+   "job_share": 0.0,
+   "calibration_share": 0.0,
+   "idle_share": 1.0,
+   "idle_reasons": {
+    "no_work": 47,
+    "other": 1
+   }
+  },
+  {
+   "id": "S06",
+   "steps_total": 48,
+   "job_steps": 1,
+   "calibration_steps": 0,
+   "idle_steps": 47,
+   "job_share": 0.0208,
+   "calibration_share": 0.0,
+   "idle_share": 0.9792,
+   "idle_reasons": {
+    "no_work": 45,
+    "other": 2
+   }
+  },
+  {
+   "id": "S07",
+   "steps_total": 48,
+   "job_steps": 0,
+   "calibration_steps": 0,
+   "idle_steps": 48,
+   "job_share": 0.0,
+   "calibration_share": 0.0,
+   "idle_share": 1.0,
+   "idle_reasons": {
+    "no_work": 48
+   }
+  },
+  {
+   "id": "S08",
+   "steps_total": 48,
+   "job_steps": 0,
+   "calibration_steps": 0,
+   "idle_steps": 48,
+   "job_share": 0.0,
+   "calibration_share": 0.0,
+   "idle_share": 1.0,
+   "idle_reasons": {
+    "other": 5,
+    "no_work": 43
+   }
+  },
+  {
+   "id": "S09",
+   "steps_total": 48,
+   "job_steps": 2,
+   "calibration_steps": 0,
+   "idle_steps": 46,
+   "job_share": 0.0417,
+   "calibration_share": 0.0,
+   "idle_share": 0.9583,
+   "idle_reasons": {
+    "no_work": 46
+   }
+  },
+  {
+   "id": "S10",
+   "steps_total": 48,
+   "job_steps": 1,
+   "calibration_steps": 0,
+   "idle_steps": 47,
+   "job_share": 0.0208,
+   "calibration_share": 0.0,
+   "idle_share": 0.9792,
+   "idle_reasons": {
+    "no_work": 47
+   }
+  },
+  {
+   "id": "S11",
+   "steps_total": 48,
+   "job_steps": 0,
+   "calibration_steps": 0,
+   "idle_steps": 48,
+   "job_share": 0.0,
+   "calibration_share": 0.0,
+   "idle_share": 1.0,
+   "idle_reasons": {
+    "no_work": 45,
+    "other": 3
+   }
+  },
+  {
+   "id": "S12",
+   "steps_total": 48,
+   "job_steps": 3,
+   "calibration_steps": 0,
+   "idle_steps": 45,
+   "job_share": 0.0625,
+   "calibration_share": 0.0,
+   "idle_share": 0.9375,
+   "idle_reasons": {
+    "no_work": 44,
+    "other": 1
+   }
+  },
+  {
+   "id": "S13",
+   "steps_total": 48,
+   "job_steps": 0,
+   "calibration_steps": 0,
+   "idle_steps": 48,
+   "job_share": 0.0,
+   "calibration_share": 0.0,
+   "idle_share": 1.0,
+   "idle_reasons": {
+    "no_work": 46,
+    "other": 2
+   }
+  },
+  {
+   "id": "S14",
+   "steps_total": 48,
+   "job_steps": 0,
+   "calibration_steps": 0,
+   "idle_steps": 48,
+   "job_share": 0.0,
+   "calibration_share": 0.0,
+   "idle_share": 1.0,
+   "idle_reasons": {
+    "other": 2,
+    "no_work": 46
+   }
+  },
+  {
+   "id": "S15",
+   "steps_total": 48,
+   "job_steps": 0,
+   "calibration_steps": 0,
+   "idle_steps": 48,
+   "job_share": 0.0,
+   "calibration_share": 0.0,
+   "idle_share": 1.0,
+   "idle_reasons": {
+    "no_work": 46,
+    "other": 2
+   }
+  },
+  {
+   "id": "S16",
+   "steps_total": 48,
+   "job_steps": 4,
+   "calibration_steps": 0,
+   "idle_steps": 44,
+   "job_share": 0.0833,
+   "calibration_share": 0.0,
+   "idle_share": 0.9167,
+   "idle_reasons": {
+    "no_work": 43,
+    "other": 1
+   }
+  }
+ ],
+ "downlink_usage": [
+  {
+   "step": 0,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 1,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 2,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 3,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 4,
+   "used": 1,
+   "limit": 2
+  },
+  {
+   "step": 5,
+   "used": 1,
+   "limit": 2
+  },
+  {
+   "step": 6,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 7,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 8,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 9,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 10,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 11,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 12,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 13,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 14,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 15,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 16,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 17,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 18,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 19,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 20,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 21,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 22,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 23,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 24,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 25,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 26,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 27,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 28,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 29,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 30,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 31,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 32,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 33,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 34,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 35,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 36,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 37,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 38,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 39,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 40,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 41,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 42,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 43,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 44,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 45,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 46,
+   "used": 0,
+   "limit": 2
+  },
+  {
+   "step": 47,
+   "used": 0,
+   "limit": 2
+  }
+ ],
+ "energy_deficit_periods": []
+}

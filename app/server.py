@@ -31,6 +31,8 @@ from model.operations import Session
 from model.resource_env import load, validate
 from planner.baseline import decide_actions as baseline_decide_actions
 from planner.smart import decide_actions as smart_decide_actions
+from planner.explain import explain_all, explain_job
+from planner.stats import compute_stats
 
 DATA_DIR = ROOT / 'data'
 STATIC_DIR = Path(__file__).resolve().parent / 'static'
@@ -106,9 +108,16 @@ def plan_step(env, goal: str, algorithm: str) -> dict[str, dict]:
     return smart_decide_actions(env, smart_goal)
 
 
-def run_to_end(session: Session, goal: str, algorithm: str) -> None:
-    total = session.env.s['time']['steps']
-    while session.env.k < total:
+def run_branch(session: Session, goal: str, algorithm: str, until_step: int,
+               events_by_step: dict[int, list[dict]] | None = None) -> None:
+    """Довожу сессию (обычно форк) до until_step. Если по дороге есть
+    события — применяю их ровно на объявленном шаге, до выбора действий:
+    планировщик узнаёт о них не раньше, чем дошли до этого шага.
+    """
+    events_by_step = events_by_step or {}
+    while session.env.k < until_step:
+        for e in events_by_step.get(session.env.k, []):
+            session.apply_event(e)
         session.advance(plan_step(session.env, goal, algorithm))
 
 
@@ -378,8 +387,11 @@ def build_state(session_id: str, record: SessionRecord) -> dict:
     }
 
 
+# Старые поля (до jobs_due/jobs_due_missed) не трогаю — только добавляю. Их
+# уже мог прочитать фронтенд по app/mock/compare_example.json.
 COMPARE_SUMMARY_KEYS = (
-    'jobs_completed', 'critical_jobs_completed_on_time', 'critical_jobs_due',
+    'jobs_completed', 'jobs_due', 'jobs_due_missed',
+    'critical_jobs_completed_on_time', 'critical_jobs_due',
     'revenue_usd', 'below_reserve_satellite_steps', 'minimum_soc_pct', 'terminal_soc_pct',
 )
 
@@ -389,7 +401,8 @@ def compare_summary(session: Session) -> dict:
     return {k: full[k] for k in COMPARE_SUMMARY_KEYS}
 
 
-def build_verdict(summary_a: dict, summary_b: dict) -> str:
+def build_verdict(goal_a: str, algorithm_a: str, summary_a: dict,
+                  goal_b: str, algorithm_b: str, summary_b: dict) -> str:
     def better(metric: str) -> str | None:
         va, vb = summary_a[metric], summary_b[metric]
         if va == vb:
@@ -400,21 +413,26 @@ def build_verdict(summary_a: dict, summary_b: dict) -> str:
     revenue_winner = better('revenue_usd')
 
     if priority_winner is None and revenue_winner is None:
-        return 'Результаты одинаковые: обе ветки дают один и тот же план.'
+        parts = ['Результаты сопоставимы: варианты завершают одно и то же число приоритетных '
+                'заданий в срок и дают одинаковую выручку.']
+    else:
+        parts = []
+        if priority_winner is None:
+            parts.append(f"По приоритетным заданиям варианты равны "
+                         f"({summary_a['critical_jobs_completed_on_time']} в срок).")
+        else:
+            parts.append(f"Для цели priority лучше вариант {priority_winner} "
+                         f"({summary_a['critical_jobs_completed_on_time']} против "
+                         f"{summary_b['critical_jobs_completed_on_time']} заданий в срок).")
+        if revenue_winner is None:
+            parts.append(f"По выручке варианты равны (${summary_a['revenue_usd']:.2f}).")
+        else:
+            diff = abs(summary_a['revenue_usd'] - summary_b['revenue_usd'])
+            parts.append(f"Для revenue лучше вариант {revenue_winner} (выручка выше на ${diff:.2f}).")
 
-    parts = []
-    if priority_winner is None:
-        parts.append(f"По приоритетным заданиям варианты равны "
-                     f"({summary_a['critical_jobs_completed_on_time']} в срок).")
-    else:
-        parts.append(f"Для цели priority лучше вариант {priority_winner} "
-                     f"({summary_a['critical_jobs_completed_on_time']} против "
-                     f"{summary_b['critical_jobs_completed_on_time']} заданий в срок).")
-    if revenue_winner is None:
-        parts.append(f"По выручке варианты равны (${summary_a['revenue_usd']:.2f}).")
-    else:
-        diff = abs(summary_a['revenue_usd'] - summary_b['revenue_usd'])
-        parts.append(f"Для revenue лучше вариант {revenue_winner} (выручка выше на ${diff:.2f}).")
+    if algorithm_a != algorithm_b:
+        parts.append(f'Заметь: сравниваются разные алгоритмы (A — {algorithm_a}, B — {algorithm_b}), '
+                     'а не только цели, так что разница может быть не только от цели.')
     return ' '.join(parts)
 
 
@@ -501,27 +519,108 @@ def set_goal(session_id: str, payload: dict = Body(default={})):
         return build_state(session_id, record)
 
 
+def _variant_spec(payload: dict, key: str, record: SessionRecord) -> tuple[str, str] | None:
+    """Разбираю описание одной ветки сравнения: {"goal": ..., "algorithm": ...}.
+    Оба поля необязательны — чего нет, беру из текущих настроек сессии.
+    Возвращаю None, если ветка вообще не описана в новом формате (тогда
+    выше сработает старый плоский goal_a/goal_b).
+    """
+    spec = payload.get(key)
+    if spec is None:
+        return None
+    if not isinstance(spec, dict):
+        raise ApiError(f'{key} должен быть объектом с goal и/или algorithm')
+    goal = _require_goal(spec.get('goal', record.goal), f'{key}.goal')
+    algorithm = spec.get('algorithm', record.algorithm)
+    if algorithm not in ALGORITHMS:
+        raise ApiError(f'{key}.algorithm должен быть одним из {list(ALGORITHMS)}')
+    return goal, algorithm
+
+
 @app.post('/api/sessions/{session_id}/compare')
 def compare_session(session_id: str, payload: dict = Body(default={})):
     record = get_record(session_id)
     with record.lock:
-        goal_a = _require_goal(payload.get('goal_a'), 'goal_a')
-        goal_b = _require_goal(payload.get('goal_b'), 'goal_b')
+        session = record.session
+        total = session.env.s['time']['steps']
+        current_k = session.env.k
 
-        at_step = record.session.env.k
-        fork_a = record.session.fork()
-        fork_b = record.session.fork()
-        run_to_end(fork_a, goal_a, record.algorithm)
-        run_to_end(fork_b, goal_b, record.algorithm)
+        variant_a = _variant_spec(payload, 'a', record)
+        variant_b = _variant_spec(payload, 'b', record)
+        if variant_a is None and variant_b is None:
+            # старый формат — оставляю как есть, им уже могли воспользоваться
+            goal_a = _require_goal(payload.get('goal_a'), 'goal_a')
+            goal_b = _require_goal(payload.get('goal_b'), 'goal_b')
+            variant_a = (goal_a, record.algorithm)
+            variant_b = (goal_b, record.algorithm)
+        elif variant_a is None or variant_b is None:
+            raise ApiError('нужно описать обе ветки — и a, и b')
+        goal_a, algorithm_a = variant_a
+        goal_b, algorithm_b = variant_b
+
+        until_step = _require_int(payload.get('until_step', total), 'until_step',
+                                  minimum=current_k, maximum=total)
+
+        events = payload.get('events', [])
+        if not isinstance(events, list):
+            raise ApiError('events должен быть списком событий')
+        events_by_step: dict[int, list[dict]] = {}
+        for e in events:
+            if not isinstance(e, dict):
+                raise ApiError('каждое событие в events должно быть объектом')
+            at = e.get('at_step')
+            if type(at) is not int or not (current_k <= at < until_step):
+                raise ApiError(f'событие {e.get("id")!r}: at_step должен быть от {current_k} до {until_step - 1} '
+                              '(планировщик узнаёт о нём только на этом шаге)')
+            events_by_step.setdefault(at, []).append(e)
+
+        # ветки идут из одного состояния через fork() — исходную сессию не трогаем
+        fork_a = session.fork()
+        fork_b = session.fork()
+        run_branch(fork_a, goal_a, algorithm_a, until_step, events_by_step)
+        run_branch(fork_b, goal_b, algorithm_b, until_step, events_by_step)
 
         summary_a = compare_summary(fork_a)
         summary_b = compare_summary(fork_b)
         return {
-            'at_step': at_step,
-            'a': {'goal': goal_a, 'summary': summary_a},
-            'b': {'goal': goal_b, 'summary': summary_b},
-            'verdict': build_verdict(summary_a, summary_b),
+            'at_step': current_k,
+            'until_step': until_step,
+            'events_applied': events,
+            'a': {'goal': goal_a, 'algorithm': algorithm_a, 'summary': summary_a},
+            'b': {'goal': goal_b, 'algorithm': algorithm_b, 'summary': summary_b},
+            'verdict': build_verdict(goal_a, algorithm_a, summary_a, goal_b, algorithm_b, summary_b),
         }
+
+
+@app.get('/api/sessions/{session_id}/explain')
+def explain_session(session_id: str):
+    """Сводка по всем не выполненным заданиям: сколько по каждой причине и
+    топ-10 самых дорогих просроченных приоритета 3. Разбор по одному
+    заданию — GET /api/sessions/{id}/explain/{job_id}.
+    """
+    record = get_record(session_id)
+    with record.lock:
+        return explain_all(record.session.env)
+
+
+@app.get('/api/sessions/{session_id}/explain/{job_id}')
+def explain_session_job(session_id: str, job_id: str):
+    record = get_record(session_id)
+    with record.lock:
+        if job_id not in record.session.env.jobs:
+            raise ApiError(f'задание {job_id!r} не найдено', status_code=404)
+        return explain_job(record.session.env, job_id)
+
+
+@app.get('/api/sessions/{session_id}/stats')
+def stats_session(session_id: str):
+    """Загрузка группировки: доля времени на задания/калибровку/простой по
+    каждому спутнику (простой — с причинами), занятость лимита наземной
+    связи по шагам, периоды дефицита энергии.
+    """
+    record = get_record(session_id)
+    with record.lock:
+        return compute_stats(record.session.env)
 
 
 @app.get('/api/sessions/{session_id}/scenario')

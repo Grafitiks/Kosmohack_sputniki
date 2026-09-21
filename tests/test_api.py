@@ -115,7 +115,8 @@ def test_compare_does_not_change_original_session():
     assert r.status_code == 200
     cmp_data = r.json()
     assert cmp_data['at_step'] == 12
-    assert set(cmp_data.keys()) == {'at_step', 'a', 'b', 'verdict'}
+    # старые поля никуда не делись, дальше в test_compare.py проверяю добавки отдельно
+    assert {'at_step', 'a', 'b', 'verdict'} <= set(cmp_data.keys())
     assert cmp_data['a']['goal'] == 'priority'
     assert cmp_data['b']['goal'] == 'revenue'
 
@@ -242,3 +243,81 @@ def test_missing_scenario_gives_clear_error():
     r = client.get('/api/sessions/not_a_real_session/result')
     assert r.status_code == 404
     assert 'error' in r.json()
+
+
+# --- новый формат /compare: своя цель и алгоритм на каждую ветку, until_step, events ---
+
+def test_compare_variant_with_different_goal_and_algorithm():
+    state = create_p01_session()
+    sid = state['session_id']
+    r = client.post(f'/api/sessions/{sid}/compare', json={
+        'a': {'goal': 'priority', 'algorithm': 'smart'},
+        'b': {'goal': 'revenue', 'algorithm': 'baseline'},
+    })
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert data['a']['algorithm'] == 'smart'
+    assert data['b']['algorithm'] == 'baseline'
+    assert 'jobs_due' in data['a']['summary'] and 'jobs_due_missed' in data['a']['summary']
+    assert 'разные алгоритмы' in data['verdict']
+
+
+def test_compare_identical_variants_give_identical_summaries():
+    # ветки идут из одного состояния через fork() — если настройки одинаковые,
+    # результат должен быть один в один (детерминированный планировщик)
+    state = create_p01_session()
+    sid = state['session_id']
+    client.post(f'/api/sessions/{sid}/step', json={'n': 10})
+    r = client.post(f'/api/sessions/{sid}/compare', json={
+        'a': {'goal': 'priority', 'algorithm': 'smart'},
+        'b': {'goal': 'priority', 'algorithm': 'smart'},
+    })
+    assert r.status_code == 200
+    data = r.json()
+    assert data['a']['summary'] == data['b']['summary']
+    assert 'сопоставимы' in data['verdict']
+
+
+def test_compare_events_applied_only_at_their_own_step():
+    state = create_p01_session()
+    sid = state['session_id']
+    client.post(f'/api/sessions/{sid}/step', json={'n': 5})  # текущий шаг = 5
+
+    event = {'id': 'E-OUT', 'at_step': 10, 'type': 'satellite_outage',
+             'satellite_ids': ['S05'], 'end_step': 40}
+    r = client.post(f'/api/sessions/{sid}/compare', json={
+        'a': {'goal': 'priority'}, 'b': {'goal': 'priority'},
+        'until_step': 48, 'events': [event],
+    })
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert data['events_applied'] == [event]
+    # S05 в отказе с 10 по 40 — задания, привязанные к нему в это окно,
+    # должны были сорваться из-за отказа
+    a_summary = data['a']['summary']
+    assert a_summary['jobs_due_missed'] >= 1
+
+    # исходная сессия по-прежнему на шаге 5 и не видела это событие
+    result = client.get(f'/api/sessions/{sid}/result').json()
+    assert result['steps_executed'] == 5
+    assert result['events'] == []
+
+    # событие вне диапазона [текущий_шаг, until_step) отклоняется
+    bad_event = {'id': 'E-BAD', 'at_step': 2, 'type': 'satellite_outage',
+                'satellite_ids': ['S05'], 'end_step': 4}
+    r = client.post(f'/api/sessions/{sid}/compare', json={
+        'a': {'goal': 'priority'}, 'b': {'goal': 'priority'}, 'events': [bad_event],
+    })
+    assert r.status_code == 400
+    assert 'error' in r.json()
+
+
+def test_compare_old_flat_format_still_works():
+    state = create_p01_session()
+    sid = state['session_id']
+    r = client.post(f'/api/sessions/{sid}/compare', json={'goal_a': 'priority', 'goal_b': 'revenue'})
+    assert r.status_code == 200
+    data = r.json()
+    assert data['a']['goal'] == 'priority' and data['b']['goal'] == 'revenue'
+    # алгоритм по умолчанию берётся от сессии (smart), в обеих ветках одинаковый
+    assert data['a']['algorithm'] == data['b']['algorithm'] == 'smart'
