@@ -559,10 +559,89 @@ function simulateMockStep(count) {
 
 function renderAll() {
   renderHeaderAndKPI();
+  renderTimeline();
+  renderFleetMatrix();
   renderSatellitesTable();
   renderJobsTable();
   renderLastStepTable();
   renderCharts();
+}
+
+/**
+ * Временная шкала смены
+ */
+function renderTimeline() {
+  const currentMinutes = AppState.step * 5;
+  const totalMinutes = AppState.totalSteps * 5;
+  const remainingMinutes = Math.max(0, totalMinutes - currentMinutes);
+  const pct = AppState.totalSteps > 0 ? ((AppState.step / AppState.totalSteps) * 100).toFixed(1) : '0.0';
+
+  const elPct = document.getElementById('timelinePct');
+  const elElapsed = document.getElementById('timelineElapsed');
+  const elRemaining = document.getElementById('timelineRemaining');
+  const elBar = document.getElementById('timelineProgressBar');
+
+  if (elPct) elPct.textContent = `${pct}%`;
+  if (elElapsed) elElapsed.textContent = formatMinutesToHHMMSS(currentMinutes);
+  if (elRemaining) elRemaining.textContent = formatMinutesToHHMMSS(remainingMinutes);
+  if (elBar) elBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+}
+
+function formatMinutesToHHMMSS(totalMinutes) {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+}
+
+/**
+ * Матрица состояния бортов (Fleet Matrix)
+ */
+function renderFleetMatrix() {
+  const container = document.getElementById('fleetGridContainer');
+  const headerCount = document.getElementById('fleetHeaderCount');
+  if (headerCount) headerCount.textContent = AppState.satellites.length;
+  if (!container) return;
+
+  if (!AppState.satellites || AppState.satellites.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-tertiary); font-size:11px;">Нет данных</div>';
+    return;
+  }
+
+  let html = '';
+  AppState.satellites.forEach(sat => {
+    const isBelowReserve = sat.soc_pct < AppState.model.reserve_soc_pct;
+    const isBelowCrit = sat.soc_pct < AppState.model.critical_soc_pct;
+    const isTempAlert = sat.temp_c < AppState.model.payload_min_c || sat.temp_c > AppState.model.payload_max_c;
+    const isCalibUrgent = sat.calibration_age_steps >= ((sat.calibration_valid_steps || 48) - 6);
+
+    let pipColor = '#10b981';
+    let barClass = 'soc-normal';
+    if (!sat.available || isBelowCrit) {
+      pipColor = '#ef4444';
+      barClass = 'soc-danger';
+    } else if (isBelowReserve || isTempAlert || isCalibUrgent) {
+      pipColor = '#f59e0b';
+      barClass = 'soc-warning';
+    }
+
+    html += `
+      <div class="fleet-sat-card ${isBelowReserve || !sat.available ? 'card-alert' : ''}" onclick="openSatDetailModal('${sat.id}')" title="Кликните для телеметрии ${sat.id}">
+        <div class="fleet-card-top">
+          <span class="fleet-card-id">${sat.id}</span>
+          <span class="fleet-card-pip" style="background-color: ${pipColor};"></span>
+        </div>
+        <div class="fleet-card-metrics">
+          <span>${Number(sat.soc_pct).toFixed(0)}%</span>
+          <span>${Number(sat.temp_c).toFixed(0)}°</span>
+        </div>
+        <div class="fleet-card-bar-bg">
+          <div class="fleet-card-bar-fill ${barClass}" style="width:${Math.min(100, Math.max(0, sat.soc_pct))}%;"></div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
 }
 
 /**
