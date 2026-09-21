@@ -36,6 +36,17 @@ python3 -m pytest
 python3 model/operations.py --result results/файл.json --output replay.json
 ```
 
+## Запуск в контейнере
+
+Есть `Dockerfile` — сессии сервис держит в памяти, ничего на диск не пишет и не читает localhost, так что образ можно катить на любой хостинг как есть.
+
+```bash
+docker build -t kosmohack-sputniki .
+docker run -p 8000:8000 kosmohack-sputniki
+```
+
+Порт слушает `$PORT`, если хостинг его задаёт (иначе 8000 по умолчанию).
+
 ## Метод и эксперименты
 
-Допишем, когда будет готов планировщик.
+Полные результаты прогонов (с trace) в репозитории не лежат — они тяжёлые, по несколько десятков мегабайт на сценарий. Получить их можно командой `python3 planner/run_compare.py --save-runs` (лягут в `results/runs/`), а что расчёт повторяется — проверить через `python3 model/operations.py --result results/runs/файл.json --output replay.json`.

@@ -5,11 +5,13 @@
 сломать это заново при следующей правке.
 """
 import json
+import threading
+import time
 from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from app.server import app
+from app.server import SESSIONS, app
 from model.operations import replay_episode
 from model.resource_env import load
 
@@ -321,3 +323,69 @@ def test_compare_old_flat_format_still_works():
     assert data['a']['goal'] == 'priority' and data['b']['goal'] == 'revenue'
     # алгоритм по умолчанию берётся от сессии (smart), в обеих ветках одинаковый
     assert data['a']['algorithm'] == data['b']['algorithm'] == 'smart'
+
+
+# --- /explain и /stats только читают: не трогают состояние сессии и берут лок ---
+
+def test_explain_and_stats_do_not_change_session_state():
+    state = create_p01_session()
+    sid = state['session_id']
+    client.post(f'/api/sessions/{sid}/run', json={'until_step': 20})
+
+    record = SESSIONS[sid]
+    digest_before = record.session.state_digest()
+
+    r1 = client.get(f'/api/sessions/{sid}/explain')
+    assert r1.status_code == 200
+    job_id = r1.json()['top_priority_jobs'][0]['job_id'] if r1.json()['top_priority_jobs'] else 'JOB-0001'
+    r2 = client.get(f'/api/sessions/{sid}/explain/{job_id}')
+    assert r2.status_code == 200
+    r3 = client.get(f'/api/sessions/{sid}/stats')
+    assert r3.status_code == 200
+
+    # explain и stats считают по env.can_execute на исторических данных (с
+    # подменой env.k/env.state и try/finally), но снаружи это не должно быть видно
+    digest_after = record.session.state_digest()
+    assert digest_before == digest_after
+
+    # следующий /step должен дать тот же результат, как будто explain/stats
+    # вообще не звали — сравниваю с параллельной "чистой" сессией
+    after_calls = client.post(f'/api/sessions/{sid}/step', json={'n': 5}).json()
+
+    clean = create_p01_session()
+    sid2 = clean['session_id']
+    client.post(f'/api/sessions/{sid2}/run', json={'until_step': 20})
+    after_clean = client.post(f'/api/sessions/{sid2}/step', json={'n': 5}).json()
+
+    assert after_calls['summary'] == after_clean['summary']
+    assert after_calls['satellites'] == after_clean['satellites']
+    assert after_calls['jobs'] == after_clean['jobs']
+
+
+def test_explain_and_stats_endpoints_take_the_session_lock():
+    state = create_p01_session()
+    sid = state['session_id']
+    client.post(f'/api/sessions/{sid}/run', json={'until_step': 20})
+    record = SESSIONS[sid]
+
+    for url in (f'/api/sessions/{sid}/explain', f'/api/sessions/{sid}/explain/JOB-0001', f'/api/sessions/{sid}/stats'):
+        held_at = []
+
+        def hold_lock():
+            with record.lock:
+                held_at.append(time.monotonic())
+                time.sleep(0.3)
+
+        t = threading.Thread(target=hold_lock)
+        t.start()
+        time.sleep(0.05)  # даю потоку точно захватить лок первым
+        t0 = time.monotonic()
+        r = client.get(url)
+        t1 = time.monotonic()
+        t.join()
+
+        assert r.status_code == 200, url
+        # если бы эндпоинт не ждал лок, ответ пришёл бы почти мгновенно —
+        # а тут он обязан был просидеть в очереди, пока поток его не отпустит
+        assert t1 - t0 >= 0.2, f'{url} не подождал лок сессии ({t1 - t0:.3f}s)'
+        assert held_at and t0 >= held_at[0] - 0.01

@@ -640,12 +640,24 @@ def get_result(session_id: str):
 
 # StaticFiles падает при старте, если папки физически нет (например, свежий
 # клон репозитория без фронтенда) — создаём пустую, чтобы сервер не падал.
-STATIC_DIR.mkdir(parents=True, exist_ok=True)
+# На некоторых хостингах файловая система на запись закрыта — тогда mkdir
+# кинет исключение, ловлю его: без папки просто не подключаю статику, но
+# API от этого падать не должен.
+try:
+    STATIC_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
 
 # Статика — после всех /api/... роутов, чтобы они не перекрылись.
-app.mount('/', StaticFiles(directory=str(STATIC_DIR), html=True), name='static')
+if STATIC_DIR.is_dir():
+    app.mount('/', StaticFiles(directory=str(STATIC_DIR), html=True), name='static')
+else:
+    print(f'внимание: папки {STATIC_DIR} нет и создать не вышло — отдаю только /api/..., без статики')
 
 
 if __name__ == '__main__':
+    import os
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=8000)
+    # Тот же $PORT, что и в Dockerfile, — чтобы python3 app/server.py и
+    # запуск в контейнере вели себя одинаково.
+    uvicorn.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 8000)))

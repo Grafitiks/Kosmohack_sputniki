@@ -9,9 +9,12 @@ venv/
 .DS_Store
 .pytest_cache/
 
-# Прогоны planner/run_compare.py — их много и они тяжёлые (P02-P04 — по
-# несколько мегабайт), а пересчитать заново — одна команда
-# (python3 planner/run_compare.py). В репозитории держим табличку и один
-# файл для примера формата, остальное не коммитим.
-results/P0*_*_*.json
-!results/P01_intro_smart_priority.json
+# Полные прогоны planner/run_compare.py (с trace) — по несколько десятков
+# мегабайт на файл на P02-P04, в git такое класть нельзя. По умолчанию
+# скрипт их вообще не пишет; с флагом --save-runs они ложатся в
+# results/runs/ — эту папку не коммитим целиком. Табличку
+# (results/comparison.md, results/comparison.json) и уже закоммиченные
+# results/P01_intro_baseline.json, results/P02_shift_baseline.json — не трогаем.
+results/runs/
+results/P0*_smart_*.json
+results/P0*_baseline_*.json

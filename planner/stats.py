@@ -115,14 +115,20 @@ def compute_stats(env) -> dict:
     sids = sorted(env.sats)
 
     satellites = []
+    total_job_steps = 0
+    total_contact_steps = 0
     for sid in sids:
         job_steps = 0
         calibration_steps = 0
+        contact_steps = 0  # шагов, где был хоть какой-то контакт (downlink или relay) и спутник не в отказе
         idle_reasons: Counter = Counter()
+        env_sid = env.s['environment'][sid]
         for t in range(k):
             row = ctx.trace_index.get((t, sid))
             if row is None:
                 continue
+            if (env_sid['downlink_available'][t] or env_sid['relay_available'][t]) and ctx.not_failed(sid, t):
+                contact_steps += 1
             if row['executed'] == 'job':
                 job_steps += 1
             elif row['executed'] == 'calibrate':
@@ -130,6 +136,8 @@ def compute_stats(env) -> dict:
             else:
                 idle_reasons[_classify_idle_step(ctx, sid, t, calib_valid)] += 1
         idle_steps = sum(idle_reasons.values())
+        total_job_steps += job_steps
+        total_contact_steps += contact_steps
         satellites.append({
             'id': sid,
             'steps_total': k,
@@ -140,6 +148,10 @@ def compute_stats(env) -> dict:
             'calibration_share': round(calibration_steps / k, 4) if k else 0.0,
             'idle_share': round(idle_steps / k, 4) if k else 0.0,
             'idle_reasons': {r: idle_reasons[r] for r in idle_reasons},
+            # сколько было шагов с доступным контактом и какая их доля реально ушла на задания —
+            # job_steps тут всегда подмножество contact_steps (задание не сделать без контакта)
+            'contact_steps': contact_steps,
+            'contact_utilization': round(job_steps / contact_steps, 4) if contact_steps else None,
         })
 
     downlink_usage = [
@@ -157,4 +169,6 @@ def compute_stats(env) -> dict:
         'satellites': satellites,
         'downlink_usage': downlink_usage,
         'energy_deficit_periods': energy_deficit_periods,
+        # то же самое, что и per-satellite contact_utilization, но по всей группировке разом
+        'contact_utilization': round(total_job_steps / total_contact_steps, 4) if total_contact_steps else None,
     }

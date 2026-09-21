@@ -6,14 +6,22 @@
 Дополнительно гоняю P02 ещё и с events_demo.json — проверить, как обе
 стратегии реагируют на события посреди смены.
 
-Каждый прогон сохраняю в results/<сценарий>_<algorithm>_<goal>.json (тем же
-форматом, что и run_baseline.py, — его можно повторить через
-model/operations.py --result). Саму табличку сохраняю в results/comparison.md.
+По умолчанию сохраняю только табличку: results/comparison.md (читаемая) и
+results/comparison.json (те же числа, без trace — это не полный результат,
+его через model/operations.py --result не повторить). Полные прогоны (с
+trace, на 288 шагах и 48 спутниках это десятки мегабайт на файл) в git
+класть нельзя, поэтому по умолчанию их не пишу вообще. Если нужны —
+запускай с --save-runs, тогда каждый прогон ляжет в
+results/runs/<сценарий>_<algorithm>_<goal>.json (тем же форматом, что и
+run_baseline.py, — можно повторить через model/operations.py --result).
+results/runs/ в .gitignore, туда что угодно можно писать, не думая о весе.
 
 Запуск: python3 planner/run_compare.py
+        python3 planner/run_compare.py --save-runs
 """
 from __future__ import annotations
 
+import argparse
 import copy
 import json
 import sys
@@ -28,6 +36,7 @@ from model.operations import Session
 from model.resource_env import load
 from planner.baseline import decide_actions as baseline_decide_actions
 from planner.smart import decide_actions as smart_decide_actions
+from planner.stats import compute_stats
 
 SCENARIOS = ('P01_intro', 'P02_shift', 'P03_energy', 'P04_demand')
 # goal у baseline не используется, у smart называется priority/commercial —
@@ -38,6 +47,7 @@ ALGORITHM_METADATA = {
     'smart': {'algorithm': 'smart_lookahead', 'version': '1'},
 }
 RESULTS_DIR = ROOT / 'results'
+RUNS_DIR = RESULTS_DIR / 'runs'
 
 
 def merge_events_into_scenario(scenario: dict, events: list[dict]) -> dict:
@@ -122,9 +132,10 @@ def run_one(scenario: dict, algorithm: str, api_goal: str, smart_goal: str,
     return session, elapsed
 
 
-def save_result(session: Session, name: str, algorithm: str, api_goal: str) -> Path:
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    path = RESULTS_DIR / f'{name}_{algorithm}_{api_goal}.json'
+def save_run(session: Session, name: str, algorithm: str, api_goal: str) -> Path:
+    """Полный результат прогона, с trace — только по --save-runs, в results/runs/."""
+    RUNS_DIR.mkdir(parents=True, exist_ok=True)
+    path = RUNS_DIR / f'{name}_{algorithm}_{api_goal}.json'
     path.write_text(json.dumps(session.result(), ensure_ascii=False, indent=2, allow_nan=False), encoding='utf-8')
     return path
 
@@ -132,6 +143,9 @@ def save_result(session: Session, name: str, algorithm: str, api_goal: str) -> P
 def build_row(name: str, api_goal: str, algorithm: str, session: Session, elapsed: float, ceiling: tuple) -> dict:
     summary = session.summary()
     reachable_jobs, total_jobs, reachable_priority, total_priority = ceiling
+    # доля шагов с доступным контактом (не в отказе), которая реально ушла на задания —
+    # считаю через planner/stats.py, чтобы не дублировать этот подсчёт второй раз
+    utilization = compute_stats(session.env)['contact_utilization']
     return {
         'scenario': name,
         'goal': api_goal,
@@ -141,6 +155,7 @@ def build_row(name: str, api_goal: str, algorithm: str, session: Session, elapse
         'completed': f"{summary['jobs_completed']}/{summary['jobs_total']}",
         'critical_on_time': f"{summary['critical_jobs_completed_on_time']}/{summary['critical_jobs_due']}",
         'revenue_usd': summary['revenue_usd'],
+        'contact_utilization': f'{utilization * 100:.1f}%' if utilization is not None else 'n/a',
         'blocked': summary['blocked_command_count'],
         'seconds': round(elapsed, 3),
     }
@@ -170,8 +185,9 @@ def save_markdown(rows: list[dict], headers: list[str], path: Path) -> None:
         '`ceiling_jobs`/`ceiling_critical` — сколько заданий (и отдельно приоритетных) можно '
         'успеть вообще, если бы хватало энергии и наземных каналов без ограничений — '
         'это верхняя граница по одним только окнам связи, разрыв до неё показывает, '
-        'сколько теряем на ресурсах и на самом алгоритме. Отдельно внизу — P02 с событиями '
-        'из examples/events_demo.json.',
+        'сколько теряем на ресурсах и на самом алгоритме. `contact_utilization` — какая доля '
+        'шагов с доступным (и не в отказе) контактом у спутников реально ушла на задания, '
+        'а не простояла. Отдельно внизу — P02 с событиями из examples/events_demo.json.',
         '',
         '| ' + ' | '.join(headers) + ' |',
         '|' + '|'.join(['---'] * len(headers)) + '|',
@@ -181,9 +197,19 @@ def save_markdown(rows: list[dict], headers: list[str], path: Path) -> None:
     path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
 
+def save_json(rows: list[dict], path: Path) -> None:
+    """Те же числа, что в табличке, но машиночитаемо и без trace."""
+    path.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding='utf-8')
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--save-runs', action='store_true',
+                        help='сохранять полные прогоны (с trace) в results/runs/ — по умолчанию нет')
+    args = parser.parse_args()
+
     headers = ['scenario', 'goal', 'algorithm', 'ceiling_jobs', 'ceiling_critical',
-              'completed', 'critical_on_time', 'revenue_usd', 'blocked', 'seconds']
+              'completed', 'critical_on_time', 'revenue_usd', 'contact_utilization', 'blocked', 'seconds']
     rows = []
 
     for name in SCENARIOS:
@@ -192,7 +218,8 @@ def main() -> None:
         for api_goal, smart_goal in GOALS:
             for algorithm in ('baseline', 'smart'):
                 session, elapsed = run_one(scenario, algorithm, api_goal, smart_goal)
-                save_result(session, name, algorithm, api_goal)
+                if args.save_runs:
+                    save_run(session, name, algorithm, api_goal)
                 rows.append(build_row(name, api_goal, algorithm, session, elapsed, ceiling))
 
     # P02 с событиями из examples/events_demo.json — отдельная группа строк
@@ -206,14 +233,21 @@ def main() -> None:
     for api_goal, smart_goal in GOALS:
         for algorithm in ('baseline', 'smart'):
             session, elapsed = run_one(base_scenario, algorithm, api_goal, smart_goal, events_by_step)
-            save_result(session, events_name, algorithm, api_goal)
+            if args.save_runs:
+                save_run(session, events_name, algorithm, api_goal)
             rows.append(build_row(events_name, api_goal, algorithm, session, elapsed, events_ceiling))
 
     print_table(rows, headers)
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     md_path = RESULTS_DIR / 'comparison.md'
+    json_path = RESULTS_DIR / 'comparison.json'
     save_markdown(rows, headers, md_path)
-    print(f'\nТаблица сохранена в {md_path}')
-    print(f'Результаты прогонов — в {RESULTS_DIR}/<сценарий>_<algorithm>_<goal>.json')
+    save_json(rows, json_path)
+    print(f'\nТаблица сохранена в {md_path} и {json_path}')
+    if args.save_runs:
+        print(f'Полные прогоны (с trace) — в {RUNS_DIR}/<сценарий>_<algorithm>_<goal>.json')
+    else:
+        print('Полные прогоны не сохранял (по умолчанию) — добавь --save-runs, если они нужны.')
 
 
 if __name__ == '__main__':
