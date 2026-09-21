@@ -519,9 +519,6 @@ function applyState(state) {
   document.getElementById('btnDownloadResult').disabled = false;
 
   renderAll();
-  if (typeof window.playSuccessChime === 'function' && AppState.step > 0) {
-    window.playSuccessChime();
-  }
 }
 
 /**
@@ -1471,9 +1468,6 @@ function showAlert(text) {
   const banner = document.getElementById('alertBanner');
   document.getElementById('alertMsg').textContent = text;
   banner.classList.remove('hidden');
-  if (typeof window.playAlertBeep === 'function') {
-    window.playAlertBeep();
-  }
 }
 
 function hideAlert() {
@@ -1997,7 +1991,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 8. ИНИЦИАЛИЗАЦИЯ WEBACTICS EXPERIENCE
   // ===========================================================================
   initSpaceCanvas();
-  initWebTacticsAudio();
+  initKeyClickAudio();
   initCardSpotlights();
 });
 
@@ -2199,211 +2193,57 @@ function initSpaceCanvas() {
 }
 
 /**
- * 8.2. АМБИЕНТНЫЙ АУДИО-СИНТЕЗАТОР ЦУП (Web Audio API)
- * Полностью процедурный звук космической станции без внешних аудио-файлов:
- * - Стерео-суб-дрон 55 Гц + гармоника 110 Гц
- * - Модулируемый НЧ-фильтр (LFO 0.08 Гц, дыхание атмосферы)
- * - Мягкий шум системы жизнеобеспечения
- * - Тактильные щелчки консоли при кликах
+ * 8.2. ТИХИЕ ТАКТИЛЬНЫЕ ЗВУКИ КНОПОК И КЛАВИШ (Web Audio API)
+ * Полностью исключены фоновые гулы, дроны, сирены и фанфары.
+ * Оставлен только деликатный, ультра-тихий механический микро-клик
+ * при нажатии на кнопки пульта, табы, селекторы и клавиши клавиатуры.
  */
-let audioCtx = null;
-let masterGainNode = null;
-let isAudioActive = false;
+let clickAudioCtx = null;
 
-function initWebTacticsAudio() {
-  const soundBtn = document.getElementById('sound-toggle');
-  if (!soundBtn) return;
-
-  function createAmbientDrone() {
-    try {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContextClass) return null;
-      audioCtx = new AudioContextClass();
-
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-
-      masterGainNode = audioCtx.createGain();
-      masterGainNode.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-      masterGainNode.connect(audioCtx.destination);
-
-      // Фильтр низких частот
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(220, audioCtx.currentTime);
-      filter.Q.setValueAtTime(3.2, audioCtx.currentTime);
-      filter.connect(masterGainNode);
-
-      // LFO для плавного дыхания фильтра
-      const lfo = audioCtx.createOscillator();
-      lfo.type = 'sine';
-      lfo.frequency.setValueAtTime(0.08, audioCtx.currentTime);
-
-      const lfoGain = audioCtx.createGain();
-      lfoGain.gain.setValueAtTime(65, audioCtx.currentTime);
-      lfo.connect(lfoGain);
-      lfoGain.connect(filter.frequency);
-      lfo.start();
-
-      // Генератор 1: Суб-бас (55 Гц)
-      const osc1 = audioCtx.createOscillator();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(55, audioCtx.currentTime);
-      osc1.detune.setValueAtTime(-4, audioCtx.currentTime);
-
-      // Генератор 2: Мягкий обертон (110 Гц)
-      const osc2 = audioCtx.createOscillator();
-      osc2.type = 'triangle';
-      osc2.frequency.setValueAtTime(110, audioCtx.currentTime);
-      osc2.detune.setValueAtTime(4, audioCtx.currentTime);
-
-      const osc2Gain = audioCtx.createGain();
-      osc2Gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      osc2.connect(osc2Gain);
-
-      osc1.connect(filter);
-      osc2Gain.connect(filter);
-
-      osc1.start();
-      osc2.start();
-
-      // Шумовой генератор потока воздуха кабины
-      const bufferSize = audioCtx.sampleRate * 2;
-      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-      const output = noiseBuffer.getChannelData(0);
-      let b0 = 0, b1 = 0, b2 = 0;
-      for (let i = 0; i < bufferSize; i++) {
-        const white = Math.random() * 2 - 1;
-        b0 = 0.99886 * b0 + white * 0.0555179;
-        b1 = 0.99332 * b1 + white * 0.0750759;
-        b2 = 0.96900 * b2 + white * 0.1538520;
-        output[i] = (b0 + b1 + b2) * 0.025;
-      }
-
-      const noiseSource = audioCtx.createBufferSource();
-      noiseSource.buffer = noiseBuffer;
-      noiseSource.loop = true;
-
-      const noiseFilter = audioCtx.createBiquadFilter();
-      noiseFilter.type = 'bandpass';
-      noiseFilter.frequency.setValueAtTime(1200, audioCtx.currentTime);
-      noiseFilter.Q.setValueAtTime(1.8, audioCtx.currentTime);
-
-      const noiseGain = audioCtx.createGain();
-      noiseGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-
-      noiseSource.connect(noiseFilter);
-      noiseFilter.connect(noiseGain);
-      noiseGain.connect(masterGainNode);
-      noiseSource.start();
-
-      return true;
-    } catch (err) {
-      console.warn('Web Audio API не поддерживается или заблокирован:', err);
-      return false;
+function playQuietClick(freq = 640, duration = 0.02) {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    if (!clickAudioCtx) {
+      clickAudioCtx = new AudioContextClass();
     }
-  }
-
-  function playUiBeep(freq = 980, duration = 0.04) {
-    if (!audioCtx || !isAudioActive || audioCtx.state !== 'running') return;
-    try {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(freq * 0.5, audioCtx.currentTime + duration);
-
-      gain.gain.setValueAtTime(0.035, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + duration);
-    } catch (e) {}
-  }
-
-  window.playAlertBeep = function() {
-    if (!audioCtx || !isAudioActive || audioCtx.state !== 'running') return;
-    try {
-      const now = audioCtx.currentTime;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(680, now);
-      osc.frequency.setValueAtTime(440, now + 0.08);
-
-      gain.gain.setValueAtTime(0.06, now);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
-
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(now);
-      osc.stop(now + 0.18);
-    } catch (e) {}
-  };
-
-  window.playSuccessChime = function() {
-    if (!audioCtx || !isAudioActive || audioCtx.state !== 'running') return;
-    try {
-      const now = audioCtx.currentTime;
-      [523.25, 659.25, 783.99].forEach((f, idx) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(f, now + idx * 0.06);
-
-        gain.gain.setValueAtTime(0.04, now + idx * 0.06);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.06 + 0.14);
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now + idx * 0.06);
-        osc.stop(now + idx * 0.06 + 0.14);
-      });
-    } catch (e) {}
-  };
-
-  soundBtn.addEventListener('click', () => {
-    if (!audioCtx) {
-      createAmbientDrone();
+    if (clickAudioCtx.state === 'suspended') {
+      clickAudioCtx.resume();
     }
-    if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
+    const now = clickAudioCtx.currentTime;
+    const osc = clickAudioCtx.createOscillator();
+    const gain = clickAudioCtx.createGain();
 
-    isAudioActive = !isAudioActive;
+    // Мягкий синусоидальный щелчок
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, now);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.45, now + duration);
 
-    if (isAudioActive) {
-      soundBtn.classList.remove('muted');
-      soundBtn.title = 'Отключить атмосферный космический звук ЦУП';
-      if (masterGainNode) {
-        masterGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
-        masterGainNode.gain.linearRampToValueAtTime(0.14, audioCtx.currentTime + 1.2);
-      }
-      playUiBeep(1200, 0.08);
-      showAlert('Космический аудио-канал ЦУП активирован (Web Audio API)');
-    } else {
-      soundBtn.classList.add('muted');
-      soundBtn.title = 'Включить атмосферный космический звук ЦУП (Web Audio)';
-      if (masterGainNode) {
-        masterGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
-        masterGainNode.gain.linearRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
-      }
+    // Ультра-тихий уровень громкости (0.015)
+    gain.gain.setValueAtTime(0.015, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    osc.connect(gain);
+    gain.connect(clickAudioCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + duration);
+  } catch (e) {}
+}
+
+function initKeyClickAudio() {
+  // Тихий щелчок при нажатии на интерактивные кнопки, табы, карточки и селекты
+  document.addEventListener('click', (e) => {
+    const clickable = e.target.closest('button, .btn, .nav-tab, .sat-row, .fleet-sat-card, .event-pill-tab, .step-badge, select, input[type="checkbox"], input[type="radio"], .preset-badge');
+    if (clickable) {
+      playQuietClick(680, 0.022);
     }
   });
 
-  // Делегированные тактильные щелчки при нажатии на элементы интерфейса
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('button, .btn, .nav-tab, .sat-row, .fleet-sat-card, .event-pill-tab, .step-badge');
-    if (btn && isAudioActive && btn.id !== 'sound-toggle') {
-      if (btn.classList.contains('btn-primary') || btn.classList.contains('btn-step')) {
-        playUiBeep(1100, 0.05);
-      } else {
-        playUiBeep(880, 0.03);
-      }
-    }
+  // Тихий щелчок при нажатии на клавиши клавиатуры
+  document.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    playQuietClick(520, 0.018);
   });
 }
 
