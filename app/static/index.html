@@ -3,8 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Пульт управления группировкой | КосмоХакатон 2026</title>
+  <title>ПУЛЬТ ЦУП · ОРБИТАЛЬНАЯ ГРУППИРОВКА | КосмоХакатон 2026</title>
   
+  <!-- Футуристические шрифты (WebTactics Aero/Space style: Syncopate, Orbitron, Rajdhani) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Rajdhani:wght@500;600;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="style.css">
   
   <!-- Chart.js для графиков (локальный бандл для 100% работы без интернета + fallback) -->
@@ -12,6 +17,24 @@
   <script>if (typeof Chart === 'undefined') document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\\/script>');</script>
 </head>
 <body>
+
+  <!-- КИНЕМАТОГРАФИЧНЫЙ ФИЛЬМ-ГРЕЙН (WEBACTICS ATMOSPHERE GRAIN) -->
+  <div class="grain"></div>
+
+  <!-- ИНТЕРАКТИВНЫЙ ХОЛСТ ЗВЁЗДНОГО НЕБА И ОРБИТАЛЬНЫХ УЗЛОВ -->
+  <canvas id="space-canvas"></canvas>
+
+  <!-- КОСМИЧЕСКИЙ АМБИЕНТ-ЗВУК (WEBACTICS AUDIO TOGGLE - WEB AUDIO API) -->
+  <button id="sound-toggle" class="sound-toggle muted" type="button" title="Включить атмосферный космический звук ЦУП (Web Audio)">
+    <div class="sound-bars">
+      <div class="sound-bar"></div>
+      <div class="sound-bar"></div>
+      <div class="sound-bar"></div>
+      <div class="sound-bar"></div>
+      <div class="sound-bar"></div>
+    </div>
+    <span class="sound-label">AUDIO</span>
+  </button>
 
   <!-- БИБЛИОТЕКА ВЕКТОРНЫХ SVG-ИКОНОК -->
   <svg style="display: none;">

@@ -519,6 +519,9 @@ function applyState(state) {
   document.getElementById('btnDownloadResult').disabled = false;
 
   renderAll();
+  if (typeof window.playSuccessChime === 'function' && AppState.step > 0) {
+    window.playSuccessChime();
+  }
 }
 
 /**
@@ -1468,6 +1471,9 @@ function showAlert(text) {
   const banner = document.getElementById('alertBanner');
   document.getElementById('alertMsg').textContent = text;
   banner.classList.remove('hidden');
+  if (typeof window.playAlertBeep === 'function') {
+    window.playAlertBeep();
+  }
 }
 
 function hideAlert() {
@@ -1986,4 +1992,436 @@ document.addEventListener('DOMContentLoaded', () => {
   // СКАЧИВАНИЕ РЕЗУЛЬТАТА
   // ==========================
   document.getElementById('btnDownloadResult').addEventListener('click', apiDownloadResult);
+
+  // ===========================================================================
+  // 8. ИНИЦИАЛИЗАЦИЯ WEBACTICS EXPERIENCE
+  // ===========================================================================
+  initSpaceCanvas();
+  initWebTacticsAudio();
+  initCardSpotlights();
 });
+
+// =============================================================================
+// 8. АТМОСФЕРНЫЙ ДВИЖОК WEBACTICS (Space Canvas, Ambient Audio, Dynamic Spotlight)
+// =============================================================================
+
+/**
+ * 8.1. ХОЛСТ ОРБИТАЛЬНЫХ СОЗВЕЗДИЙ (#space-canvas)
+ * Высокопроизводительный фоновый рендеринг звёздного поля и телеметрических узлов.
+ * Поддерживает Retina/HiDPI экраны, плавное вращение и лазерные лучи к курсору.
+ */
+function initSpaceCanvas() {
+  const canvas = document.getElementById('space-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  let width = 0;
+  let height = 0;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  const mouse = { x: -9999, y: -9999, targetX: -9999, targetY: -9999, active: false };
+
+  window.addEventListener('mousemove', (e) => {
+    mouse.targetX = e.clientX;
+    mouse.targetY = e.clientY;
+    mouse.active = true;
+  });
+
+  window.addEventListener('mouseleave', () => {
+    mouse.active = false;
+    mouse.targetX = -9999;
+    mouse.targetY = -9999;
+  });
+
+  function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Глубокое звёздное поле (WebTactics deep void starfield)
+  const starCount = Math.min(130, Math.floor((width * height) / 11000));
+  const stars = [];
+  for (let i = 0; i < starCount; i++) {
+    stars.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      size: Math.random() * 1.4 + 0.4,
+      baseAlpha: Math.random() * 0.65 + 0.15,
+      twinkleSpeed: Math.random() * 0.02 + 0.006,
+      twinklePhase: Math.random() * Math.PI * 2,
+      vx: (Math.random() - 0.5) * 0.06,
+      vy: (Math.random() - 0.5) * 0.06
+    });
+  }
+
+  // Орбитальные ретрансляционные узлы (Constellation Telemetry Nodes)
+  const nodeCount = Math.min(18, Math.max(10, Math.floor(width / 110)));
+  const nodes = [];
+  for (let i = 0; i < nodeCount; i++) {
+    nodes.push({
+      id: `S${String(i + 1).padStart(2, '0')}`,
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.32,
+      vy: (Math.random() - 0.5) * 0.32,
+      radius: Math.random() * 1.2 + 2.0,
+      pulsePhase: Math.random() * Math.PI * 2,
+      color: i % 2 === 0 ? 'rgba(56, 189, 248,' : 'rgba(216, 180, 254,'
+    });
+  }
+
+  const MAX_LINK_DIST = 155;
+  const MOUSE_LINK_DIST = 190;
+
+  function render() {
+    if (document.hidden) {
+      requestAnimationFrame(render);
+      return;
+    }
+
+    if (mouse.active) {
+      mouse.x += (mouse.targetX - mouse.x) * 0.08;
+      mouse.y += (mouse.targetY - mouse.y) * 0.08;
+    } else {
+      mouse.x = -9999;
+      mouse.y = -9999;
+    }
+
+    ctx.clearRect(0, 0, width, height);
+
+    // 1. Отрисовка звёзд
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      s.x += s.vx;
+      s.y += s.vy;
+      if (s.x < 0) s.x = width;
+      else if (s.x > width) s.x = 0;
+      if (s.y < 0) s.y = height;
+      else if (s.y > height) s.y = 0;
+
+      s.twinklePhase += s.twinkleSpeed;
+      const alpha = s.baseAlpha * (0.65 + 0.35 * Math.sin(s.twinklePhase));
+
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(3)})`;
+      ctx.fillRect(s.x, s.y, s.size, s.size);
+    }
+
+    // 2. Обновление орбитальных узлов
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      n.x += n.vx;
+      n.y += n.vy;
+
+      if (n.x < 24) { n.x = 24; n.vx *= -1; }
+      else if (n.x > width - 24) { n.x = width - 24; n.vx *= -1; }
+      if (n.y < 24) { n.y = 24; n.vy *= -1; }
+      else if (n.y > height - 24) { n.y = height - 24; n.vy *= -1; }
+
+      n.pulsePhase += 0.035;
+
+      // Магнитное притяжение к курсору оператора
+      if (mouse.active) {
+        const dx = mouse.x - n.x;
+        const dy = mouse.y - n.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_LINK_DIST && dist > 12) {
+          const pull = (1 - dist / MOUSE_LINK_DIST) * 0.16;
+          n.x += (dx / dist) * pull;
+          n.y += (dy / dist) * pull;
+        }
+      }
+    }
+
+    // 3. Лазерные каналы телеметрии между узлами
+    ctx.lineWidth = 1;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const n1 = nodes[i];
+        const n2 = nodes[j];
+        const dx = n2.x - n1.x;
+        const dy = n2.y - n1.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MAX_LINK_DIST) {
+          const alpha = (1 - dist / MAX_LINK_DIST) * 0.22;
+          ctx.strokeStyle = `rgba(168, 85, 247, ${alpha.toFixed(3)})`;
+          ctx.beginPath();
+          ctx.moveTo(n1.x, n1.y);
+          ctx.lineTo(n2.x, n2.y);
+          ctx.stroke();
+        }
+      }
+
+      // Луч на курсор
+      if (mouse.active) {
+        const dx = mouse.x - nodes[i].x;
+        const dy = mouse.y - nodes[i].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_LINK_DIST) {
+          const alpha = (1 - dist / MOUSE_LINK_DIST) * 0.38;
+          ctx.strokeStyle = `rgba(56, 189, 248, ${alpha.toFixed(3)})`;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(mouse.x, mouse.y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // 4. Отрисовка узлов спутников
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      const pulse = Math.sin(n.pulsePhase) * 0.5 + 0.5;
+      const glowR = n.radius + pulse * 3.8;
+
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
+      ctx.fillStyle = `${n.color}${(0.16 + pulse * 0.18).toFixed(2)})`;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    }
+
+    requestAnimationFrame(render);
+  }
+
+  requestAnimationFrame(render);
+}
+
+/**
+ * 8.2. АМБИЕНТНЫЙ АУДИО-СИНТЕЗАТОР ЦУП (Web Audio API)
+ * Полностью процедурный звук космической станции без внешних аудио-файлов:
+ * - Стерео-суб-дрон 55 Гц + гармоника 110 Гц
+ * - Модулируемый НЧ-фильтр (LFO 0.08 Гц, дыхание атмосферы)
+ * - Мягкий шум системы жизнеобеспечения
+ * - Тактильные щелчки консоли при кликах
+ */
+let audioCtx = null;
+let masterGainNode = null;
+let isAudioActive = false;
+
+function initWebTacticsAudio() {
+  const soundBtn = document.getElementById('sound-toggle');
+  if (!soundBtn) return;
+
+  function createAmbientDrone() {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      audioCtx = new AudioContextClass();
+
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      masterGainNode = audioCtx.createGain();
+      masterGainNode.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+      masterGainNode.connect(audioCtx.destination);
+
+      // Фильтр низких частот
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(220, audioCtx.currentTime);
+      filter.Q.setValueAtTime(3.2, audioCtx.currentTime);
+      filter.connect(masterGainNode);
+
+      // LFO для плавного дыхания фильтра
+      const lfo = audioCtx.createOscillator();
+      lfo.type = 'sine';
+      lfo.frequency.setValueAtTime(0.08, audioCtx.currentTime);
+
+      const lfoGain = audioCtx.createGain();
+      lfoGain.gain.setValueAtTime(65, audioCtx.currentTime);
+      lfo.connect(lfoGain);
+      lfoGain.connect(filter.frequency);
+      lfo.start();
+
+      // Генератор 1: Суб-бас (55 Гц)
+      const osc1 = audioCtx.createOscillator();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(55, audioCtx.currentTime);
+      osc1.detune.setValueAtTime(-4, audioCtx.currentTime);
+
+      // Генератор 2: Мягкий обертон (110 Гц)
+      const osc2 = audioCtx.createOscillator();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(110, audioCtx.currentTime);
+      osc2.detune.setValueAtTime(4, audioCtx.currentTime);
+
+      const osc2Gain = audioCtx.createGain();
+      osc2Gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      osc2.connect(osc2Gain);
+
+      osc1.connect(filter);
+      osc2Gain.connect(filter);
+
+      osc1.start();
+      osc2.start();
+
+      // Шумовой генератор потока воздуха кабины
+      const bufferSize = audioCtx.sampleRate * 2;
+      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      let b0 = 0, b1 = 0, b2 = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + white * 0.0555179;
+        b1 = 0.99332 * b1 + white * 0.0750759;
+        b2 = 0.96900 * b2 + white * 0.1538520;
+        output[i] = (b0 + b1 + b2) * 0.025;
+      }
+
+      const noiseSource = audioCtx.createBufferSource();
+      noiseSource.buffer = noiseBuffer;
+      noiseSource.loop = true;
+
+      const noiseFilter = audioCtx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.setValueAtTime(1200, audioCtx.currentTime);
+      noiseFilter.Q.setValueAtTime(1.8, audioCtx.currentTime);
+
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(masterGainNode);
+      noiseSource.start();
+
+      return true;
+    } catch (err) {
+      console.warn('Web Audio API не поддерживается или заблокирован:', err);
+      return false;
+    }
+  }
+
+  function playUiBeep(freq = 980, duration = 0.04) {
+    if (!audioCtx || !isAudioActive || audioCtx.state !== 'running') return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.5, audioCtx.currentTime + duration);
+
+      gain.gain.setValueAtTime(0.035, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  window.playAlertBeep = function() {
+    if (!audioCtx || !isAudioActive || audioCtx.state !== 'running') return;
+    try {
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(680, now);
+      osc.frequency.setValueAtTime(440, now + 0.08);
+
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.18);
+    } catch (e) {}
+  };
+
+  window.playSuccessChime = function() {
+    if (!audioCtx || !isAudioActive || audioCtx.state !== 'running') return;
+    try {
+      const now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99].forEach((f, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + idx * 0.06);
+
+        gain.gain.setValueAtTime(0.04, now + idx * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.06 + 0.14);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + idx * 0.06);
+        osc.stop(now + idx * 0.06 + 0.14);
+      });
+    } catch (e) {}
+  };
+
+  soundBtn.addEventListener('click', () => {
+    if (!audioCtx) {
+      createAmbientDrone();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+
+    isAudioActive = !isAudioActive;
+
+    if (isAudioActive) {
+      soundBtn.classList.remove('muted');
+      soundBtn.title = 'Отключить атмосферный космический звук ЦУП';
+      if (masterGainNode) {
+        masterGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+        masterGainNode.gain.linearRampToValueAtTime(0.14, audioCtx.currentTime + 1.2);
+      }
+      playUiBeep(1200, 0.08);
+      showAlert('Космический аудио-канал ЦУП активирован (Web Audio API)');
+    } else {
+      soundBtn.classList.add('muted');
+      soundBtn.title = 'Включить атмосферный космический звук ЦУП (Web Audio)';
+      if (masterGainNode) {
+        masterGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+        masterGainNode.gain.linearRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
+      }
+    }
+  });
+
+  // Делегированные тактильные щелчки при нажатии на элементы интерфейса
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button, .btn, .nav-tab, .sat-row, .fleet-sat-card, .event-pill-tab, .step-badge');
+    if (btn && isAudioActive && btn.id !== 'sound-toggle') {
+      if (btn.classList.contains('btn-primary') || btn.classList.contains('btn-step')) {
+        playUiBeep(1100, 0.05);
+      } else {
+        playUiBeep(880, 0.03);
+      }
+    }
+  });
+}
+
+/**
+ * 8.3. ИНТЕРАКТИВНЫЙ SPOTLIGHT НА КАРТОЧКАХ (WebTactics Radial Highlight)
+ * Отслеживает курсор мыши над карточками и проецирует мягкое динамическое свечение.
+ */
+function initCardSpotlights() {
+  window.addEventListener('mousemove', (e) => {
+    const card = e.target.closest(
+      '.kpi-panel, .fleet-sat-card, .risk-radar-panel, .chart-box, .compare-col, .modal-box, .panel-container'
+    );
+    if (card) {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      card.style.setProperty('--mouse-x', `${x}px`);
+      card.style.setProperty('--mouse-y', `${y}px`);
+    }
+  });
+}
