@@ -82,19 +82,19 @@ function getSatColor(id, index) {
  * Проверка доступности бэкенда и загрузка сценариев
  */
 async function initBackendConnection() {
-  setConnectionStatus('checking', 'Подключение к API...');
+  setConnectionStatus('checking', 'Подключение к ядру ЦУП...');
   try {
     const res = await fetch('/api/scenarios', { method: 'GET' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const scenarios = await res.json();
     AppState.scenariosList = scenarios;
     AppState.isMockMode = false;
-    setConnectionStatus('online', 'Бэкенд онлайн');
+    setConnectionStatus('online', 'ЯДРО ЦУП: ОНЛАЙН');
     populateScenariosSelect(scenarios);
   } catch (err) {
-    console.warn('Бэкенд недоступен, переключаемся на app/mock:', err.message);
+    console.warn('Бэкенд недоступен, переход в автономный режим:', err.message);
     AppState.isMockMode = true;
-    setConnectionStatus('mock', 'Демо-режим (app/mock)');
+    setConnectionStatus('mock', 'АВТОНОМНЫЙ РЕЖИМ');
     await loadMockScenarios();
   }
 }
@@ -1438,15 +1438,12 @@ function formatMinutesToHHMM(totalMinutes) {
 function setConnectionStatus(type, text) {
   const dot = document.getElementById('statusDot');
   const txt = document.getElementById('statusText');
-  const toggleBtn = document.getElementById('btnModeToggle');
 
-  dot.className = 'status-dot ' + (type === 'online' ? 'online' : 'mock');
-  txt.textContent = text;
-
-  if (type === 'online') {
-    toggleBtn.textContent = 'Перейти в Демо';
-  } else {
-    toggleBtn.textContent = 'Подключить Бэкенд';
+  if (dot) {
+    dot.className = 'status-pip ' + (type === 'online' ? 'online' : 'mock');
+  }
+  if (txt) {
+    txt.textContent = text;
   }
 }
 
@@ -1486,16 +1483,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Автоматический старт демо-смены при первой загрузке, чтобы страница не была пустой
   apiStartSession('P01_intro', 'priority');
 
-  // Переключение источника (Бэкенд / Демо)
-  document.getElementById('btnModeToggle').addEventListener('click', () => {
-    if (AppState.isMockMode) {
-      initBackendConnection();
-    } else {
-      AppState.isMockMode = true;
-      setConnectionStatus('mock', 'Демо-режим (app/mock)');
-      showAlert('Переключено в локальный демо-режим (данные из app/mock)');
-    }
-  });
+  // Клик по статусу связи для повторной проверки/переподключения
+  const statusBadge = document.getElementById('connectionStatusWrapper');
+  if (statusBadge) {
+    statusBadge.addEventListener('click', initBackendConnection);
+  }
 
   // Закрытие алерта
   document.getElementById('alertClose').addEventListener('click', hideAlert);
