@@ -1452,6 +1452,49 @@ body {
   color: #fff;
 }
 
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.filter-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-box label {
+  font-family: var(--font-hud);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.control-select {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-family: var(--font-hud);
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 6px 10px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.control-select:focus {
+  border-color: var(--cyan-orbital);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+}
+
 /* ==========================================================================
    ТАБЛИЦЫ (HUD DATA TABLES)
    ========================================================================== */
@@ -2066,36 +2109,746 @@ body {
 }
 
 /* ==========================================================================
-   АДАПТИВНОСТЬ (RESPONSIVE VIEWPORTS)
+   АДАПТИВНОСТЬ И МОБИЛЬНАЯ ЭРГОНОМИКА (RESPONSIVE VIEWPORTS & MOBILE UX)
    ========================================================================== */
+
+/* Базовые оптимизации для сенсорных экранов и мобильных устройств */
+button, .btn, .nav-tab, .fleet-sat-card, .btn-pill, .btn-step, .btn-event, .btn-step-go, select, input {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(56, 189, 248, 0.15);
+}
+
+.table-frame {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(56, 189, 248, 0.3) rgba(255, 255, 255, 0.04);
+}
+
+.table-frame::-webkit-scrollbar {
+  height: 5px;
+}
+
+.table-frame::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+}
+
+/* 1. Десктопы с уменьшенным разрешением и ноутбуки (<= 1200px) */
 @media (max-width: 1200px) {
   .kpi-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-@media (max-width: 860px) {
+/* 2. Планшеты (<= 960px) */
+@media (max-width: 960px) {
+  .main-layout {
+    padding: 16px 2vw 60px;
+    gap: 16px;
+  }
+
   .app-header {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 10px;
+    padding: 12px 18px;
   }
-  .header-left, .header-center, .header-right {
+
+  .header-left {
+    display: flex;
+    align-items: center;
     justify-content: space-between;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 10px;
   }
+
+  .header-center {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .status-indicator-badge {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .header-right {
+    display: flex;
+    justify-content: stretch;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .header-right .btn {
+    flex: 1;
+    font-size: 11.5px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+
   .kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
   }
+
   .charts-duo {
     grid-template-columns: 1fr;
+    gap: 14px;
   }
+
   .compare-columns-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 
-@media (max-width: 540px) {
+/* 3. Смартфоны и мобильные устройства (<= 680px) */
+@media (max-width: 680px) {
+  body {
+    font-size: 13px;
+  }
+
+  .main-layout {
+    padding: 10px 8px max(40px, env(safe-area-inset-bottom));
+    gap: 10px;
+  }
+
+  /* Шапка ЦУП на мобильном */
+  .app-header {
+    padding: max(10px, env(safe-area-inset-top)) 10px 10px;
+    gap: 8px;
+  }
+
+  .header-left {
+    gap: 8px;
+  }
+
+  .brand {
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  .brand-logo .svg-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .mission-tag {
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 190px;
+  }
+
+  .brand-title {
+    font-size: 12px;
+    line-height: 1.15;
+  }
+
+  .session-chip {
+    padding: 3px 8px;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .chip-label {
+    font-size: 8px;
+  }
+
+  .chip-value {
+    font-size: 11px;
+  }
+
+  .header-center {
+    margin-top: -2px;
+  }
+
+  .status-indicator-badge {
+    padding: 4px 10px;
+    font-size: 10.5px;
+    border-radius: var(--radius-sm);
+  }
+
+  .status-label {
+    font-size: 10.5px;
+  }
+
+  /* Кнопки в шапке на мобильном */
+  .header-right {
+    display: grid;
+    grid-template-columns: 1.3fr 1.3fr 1fr;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .header-right .btn {
+    padding: 8px 6px;
+    font-size: 10.5px;
+    gap: 4px;
+    border-radius: var(--radius-xs);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .header-right .svg-btn-icon {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Bento KPI Дашборд на мобильном: эргономичные 2 колонки */
   .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .kpi-panel {
+    padding: 10px 10px;
+    border-radius: var(--radius-sm);
+  }
+
+  .kpi-panel.goal-panel {
+    grid-column: span 2;
+  }
+
+  .panel-header {
+    margin-bottom: 4px;
+  }
+
+  .panel-label {
+    font-size: 9.5px;
+    letter-spacing: 0.03em;
+  }
+
+  .panel-icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  .panel-value {
+    font-size: 18px;
+    margin-bottom: 2px;
+  }
+
+  .val-sub {
+    font-size: 11px;
+  }
+
+  .panel-footer {
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
+  .kpi-sub-line {
+    font-size: 9.5px;
+    margin-top: 2px;
+  }
+
+  .badge-tag {
+    font-size: 8px;
+    padding: 2px 6px;
+  }
+
+  .goal-control-wrapper {
+    margin: 4px 0 6px;
+  }
+
+  .select-goal {
+    font-size: 11.5px;
+    padding: 6px 8px;
+  }
+
+  /* Временная шкала на мобильном */
+  .timeline-strip {
+    padding: 10px 10px;
+    gap: 6px;
+    border-radius: var(--radius-sm);
+  }
+
+  .timeline-meta-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .timeline-title-group {
+    gap: 6px;
+  }
+
+  .timeline-header-text {
+    font-size: 10px;
+  }
+
+  .timeline-stats {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+    font-size: 10.5px;
+  }
+
+  .timeline-track-bg {
+    height: 5px;
+  }
+
+  /* Панель оперативного управления (Пульт) на мобильном */
+  .action-toolbar {
+    padding: 8px 10px;
+    gap: 8px;
+    border-radius: var(--radius-sm);
+  }
+
+  .toolbar-section {
+    width: 100%;
+  }
+
+  .toolbar-section:first-child {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .btn-step {
+    padding: 8px 8px;
+    font-size: 11px;
+    width: 100%;
+    justify-content: center;
+    gap: 5px;
+    min-height: 40px;
+    border-radius: var(--radius-xs);
+  }
+
+  .step-direct-box {
+    width: 100%;
+    justify-content: center;
+    padding: 4px 8px;
+    min-height: 40px;
+    border-radius: var(--radius-xs);
+    gap: 6px;
+  }
+
+  .direct-label {
+    font-size: 9.5px;
+  }
+
+  .step-num-input {
+    width: 38px;
+    font-size: 13px;
+  }
+
+  .btn-step-go {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  .btn-event {
+    width: 100%;
+    justify-content: center;
+    font-size: 11.5px;
+    padding: 9px 12px;
+    min-height: 42px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Предиктивный радар на мобильном */
+  .risk-radar-panel {
+    padding: 10px 10px;
+    gap: 6px;
+    border-radius: var(--radius-sm);
+  }
+
+  .radar-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .radar-title {
+    font-size: 10px;
+  }
+
+  .radar-summary-stats {
+    font-size: 10.5px;
+  }
+
+  .radar-alerts-list {
+    gap: 5px;
+  }
+
+  .radar-pill {
+    font-size: 10.5px;
+    padding: 3px 7px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Матрица бортовых систем (Спутники) на мобильном */
+  .fleet-matrix-panel {
+    padding: 10px 10px;
+    gap: 8px;
+    border-radius: var(--radius-sm);
+  }
+
+  .matrix-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .matrix-title {
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+  }
+
+  .matrix-hint {
+    font-size: 9.5px;
+  }
+
+  .fleet-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 6px;
+  }
+
+  .fleet-sat-card {
+    padding: 7px 7px;
+    min-height: 58px;
+    border-radius: 6px;
+    gap: 4px;
+  }
+
+  .fleet-sat-card:active {
+    transform: scale(0.96);
+    filter: brightness(1.2);
+  }
+
+  .fleet-card-id {
+    font-size: 11.5px;
+  }
+
+  .fleet-card-status-tag {
+    font-size: 7.5px;
+    padding: 1px 3px;
+  }
+
+  .fleet-card-metrics {
+    font-size: 9.5px;
+  }
+
+  .fleet-card-bar-bg {
+    height: 3px;
+  }
+
+  /* Вкладки на мобильном */
+  .tabs-container {
+    border-radius: var(--radius-sm);
+  }
+
+  .tabs-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0 4px;
+  }
+
+  .tabs-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-tab {
+    padding: 10px 11px;
+    font-size: 11px;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+
+  .tab-icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  .tab-pane {
+    padding: 10px 8px;
+  }
+
+  .pane-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .search-wrapper {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .search-input {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .selection-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .action-label {
+    font-size: 10px;
+    width: 100%;
+    margin-bottom: 2px;
+  }
+
+  .btn-pill {
+    padding: 4px 9px;
+    font-size: 10px;
+  }
+
+  /* Фильтры очереди заданий на мобильном */
+  .filters-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .filters-row .search-wrapper {
+    grid-column: span 2;
+  }
+
+  .filter-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .filter-box label {
+    font-size: 9.5px;
+  }
+
+  .control-select {
+    width: 100%;
+    font-size: 11.5px;
+    padding: 6px 6px;
+  }
+
+  /* Таблицы с данными на мобильном */
+  .table-frame {
+    box-shadow: inset -10px 0 10px -10px rgba(56, 189, 248, 0.25);
+  }
+
+  .data-table th {
+    padding: 8px 8px;
+    font-size: 9.5px;
+  }
+
+  .data-table td {
+    padding: 7px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  /* Графики на мобильном */
+  .chart-box {
+    padding: 10px;
+    border-radius: var(--radius-sm);
+  }
+
+  .chart-title-group h4 {
+    font-size: 11px;
+  }
+
+  .chart-sub {
+    font-size: 9.5px;
+  }
+
+  .chart-canvas-box {
+    height: 220px;
+  }
+
+  /* Модальные окна: Премиальный мобильный Bottom-Sheet диалог */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-window,
+  .modal-window-wide {
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 18px 18px 0 0;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.9);
+  }
+
+  .window-header {
+    padding: 12px 16px;
+  }
+
+  .window-header h3 {
+    font-size: 13px;
+  }
+
+  .window-close {
+    font-size: 22px;
+    padding: 4px 8px;
+  }
+
+  .window-body {
+    padding: 12px 14px;
+    gap: 10px;
+    max-height: calc(92vh - 115px);
+  }
+
+  .window-footer {
+    padding: 10px 14px max(12px, env(safe-area-inset-bottom));
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .window-footer .btn {
+    flex: 1;
+    min-height: 40px;
+    font-size: 11.5px;
+    justify-content: center;
+  }
+
+  .grid-2, .grid-3 {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .grid-4 {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .form-input {
+    font-size: 12.5px;
+    padding: 8px 10px;
+  }
+
+  .event-preset-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .event-preset-row > div:last-child {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    gap: 6px !important;
+    width: 100%;
+  }
+
+  .event-preset-row .btn {
+    font-size: 10.5px;
+    padding: 6px 8px;
+  }
+
+  .event-type-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 5px;
+  }
+
+  .event-pill-tab {
+    font-size: 10.5px;
+    padding: 5px 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .compare-toolbar-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .pick-strategy {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .pick-strategy .form-input {
+    max-width: 65%;
+  }
+
+  .vs-divider {
+    text-align: center;
+    font-size: 10px;
+  }
+
+  .verdict-banner {
+    padding: 12px 14px;
+  }
+
+  .verdict-body {
+    font-size: 12.5px;
+  }
+}
+
+/* 4. Компактные экраны (<= 380px, например iPhone SE) */
+@media (max-width: 380px) {
+  .mission-tag {
+    display: none;
+  }
+
+  .brand-title {
+    font-size: 11px;
+  }
+
+  .header-right {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .header-right #btnDownloadResult {
+    grid-column: span 2;
+  }
+
+  .kpi-grid {
+    gap: 5px;
+  }
+
+  .kpi-panel {
+    padding: 8px 8px;
+  }
+
+  .panel-value {
+    font-size: 16px;
+  }
+
+  .fleet-grid {
+    grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+    gap: 4px;
+  }
+
+  .fleet-sat-card {
+    padding: 6px 6px;
+    min-height: 52px;
+  }
+
+  .fleet-card-id {
+    font-size: 11px;
+  }
+
+  .fleet-card-metrics {
+    font-size: 8.5px;
   }
 }
