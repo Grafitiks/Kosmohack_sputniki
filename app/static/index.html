@@ -6,8 +6,9 @@
   <title>Пульт оператора спутниковой группировки | КосмоХакатон 2026</title>
   <!-- Шрифты и стили -->
   <link rel="stylesheet" href="style.css">
-  <!-- Chart.js для графиков телеметрии -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js для графиков телеметрии (локальная копия для работы без интернета + fallback) -->
+  <script src="vendor/chart.umd.min.js"></script>
+  <script>if (typeof Chart === 'undefined') document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\\/script>');</script>
 </head>
 <body>
 
@@ -580,6 +581,23 @@
 
       <div class="modal-footer">
         <button class="btn btn-primary" id="btnCloseCompareModalBtn">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: ТЕЛЕМЕТРИЯ СПУТНИКА (ДОПОЛНИТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ОПЕРАТОРА) -->
+  <div class="modal-overlay hidden" id="modalSatDetail">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>🛰️ Телеметрия аппарата <span id="satDetailId" class="text-accent">S01</span></h2>
+        <button class="modal-close" id="btnCloseSatDetailModal">&times;</button>
+      </div>
+      <div class="modal-body" id="satDetailBody">
+        <!-- Заполняется динамически -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnToggleChartForThisSat">Выбрать для графиков</button>
+        <button class="btn btn-primary" id="btnCloseSatDetailModalBtn">Закрыть</button>
       </div>
     </div>
   </div>

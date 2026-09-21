@@ -664,7 +664,7 @@ function renderSatellitesTable() {
           <input type="checkbox" class="sat-checkbox" data-sat-id="${sat.id}" ${isChecked ? 'checked' : ''} />
         </td>
         <td>
-          <strong>${sat.id}</strong>
+          <strong class="sat-clickable" data-sat-id="${sat.id}" title="Нажмите для просмотра подробной телеметрии">${sat.id}</strong>
           ${isBelowReserve ? '<span class="badge badge-danger" style="margin-left:6px;">Ниже 30%!</span>' : ''}
         </td>
         <td>
@@ -709,6 +709,81 @@ function renderSatellitesTable() {
       renderCharts();
     });
   });
+
+  // Клик по спутнику для детальной телеметрии
+  tbody.querySelectorAll('.sat-clickable').forEach(el => {
+    el.addEventListener('click', () => {
+      openSatDetailModal(el.dataset.satId);
+    });
+  });
+}
+
+/**
+ * Открытие модального окна подробной телеметрии аппарата
+ */
+function openSatDetailModal(satId) {
+  const sat = AppState.satellites.find(s => s.id === satId);
+  if (!sat) return;
+
+  const modal = document.getElementById('modalSatDetail');
+  document.getElementById('satDetailId').textContent = sat.id;
+
+  const lastRow = (AppState.lastStepRows || []).find(r => r.satellite_id === sat.id);
+  const isBelowReserve = sat.soc_pct < AppState.model.reserve_soc_pct;
+  const isTempAlert = sat.temp_c < AppState.model.payload_min_c || sat.temp_c > AppState.model.payload_max_c;
+
+  let lastStepInfo = '<p style="color:var(--text-dim); font-size:12px;">Сведения за последний шаг отсутствуют</p>';
+  if (lastRow) {
+    const trans = REASON_TRANSLATIONS[lastRow.reason] || { label: lastRow.reason, class: 'badge-muted', hint: '' };
+    lastStepInfo = `
+      <div class="metric-row"><span class="m-label">Запрошено:</span><strong class="m-val">${lastRow.requested ? lastRow.requested.action : 'idle'}${lastRow.requested && lastRow.requested.job_id ? ` (${lastRow.requested.job_id})` : ''}</strong></div>
+      <div class="metric-row"><span class="m-label">Выполнено:</span><strong class="m-val">${lastRow.executed || 'idle'}</strong></div>
+      <div class="metric-row"><span class="m-label">Статус решения:</span><span class="badge ${trans.class}">${trans.label}</span></div>
+      <div class="metric-row"><span class="m-label">Нагрузка систем L:</span><strong class="m-val">${lastRow.load_w || 0} Вт</strong></div>
+      <div class="metric-row"><span class="m-label">Солнечный приток S:</span><strong class="m-val">${lastRow.solar_w || 0} Вт</strong></div>
+      <div class="metric-row"><span class="m-label">Завершённая задача:</span><strong class="m-val">${lastRow.completed_job || '—'}</strong></div>
+    `;
+  }
+
+  document.getElementById('satDetailBody').innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="background:var(--bg-card); padding:14px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+        <h4 style="font-size:11px; color:var(--text-dim); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.5px;">Параметры борта</h4>
+        <div class="metric-row">
+          <span class="m-label">Заряд батареи (SOC):</span>
+          <strong class="m-val ${isBelowReserve ? 'text-danger' : 'text-success'}">${Number(sat.soc_pct).toFixed(2)}% (${sat.capacity_wh} Вт·ч)</strong>
+        </div>
+        <div class="metric-row">
+          <span class="m-label">Температура оборудования:</span>
+          <strong class="m-val ${isTempAlert ? 'text-danger' : ''}">${Number(sat.temp_c).toFixed(2)}°C (норма: 5..45°C)</strong>
+        </div>
+        <div class="metric-row">
+          <span class="m-label">Возраст калибровки:</span>
+          <strong class="m-val">${sat.calibration_age_steps} из ${sat.calibration_valid_steps || 48} шагов</strong>
+        </div>
+        <div class="metric-row">
+          <span class="m-label">Готовность к работе:</span>
+          <strong class="m-val">${sat.available ? '<span class="badge badge-success">В строю</span>' : '<span class="badge badge-danger">Недоступен</span>'}</strong>
+        </div>
+      </div>
+
+      <div style="background:var(--bg-card); padding:14px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+        <h4 style="font-size:11px; color:var(--text-dim); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.5px;">Последний выполненный шаг</h4>
+        ${lastStepInfo}
+      </div>
+    </div>
+  `;
+
+  const btnToggleChart = document.getElementById('btnToggleChartForThisSat');
+  btnToggleChart.onclick = () => {
+    AppState.selectedSatellites.add(sat.id);
+    renderSatellitesTable();
+    renderCharts();
+    modal.classList.add('hidden');
+    document.querySelector('.tab-btn[data-tab="tabCharts"]').click();
+  };
+
+  modal.classList.remove('hidden');
 }
 
 /**
@@ -802,6 +877,22 @@ function renderJobsTable() {
   tbody.innerHTML = html;
 }
 
+const REASON_TRANSLATIONS = {
+  'accepted': { label: '✓ Принято', class: 'badge-success', hint: 'Команда успешно принята и исполняется' },
+  'idle': { label: 'Ожидание', class: 'badge-muted', hint: 'Штатное ожидание' },
+  'energy_reserve': { label: '⚠️ Ниже резерва 30%', class: 'badge-danger', hint: 'Отказ: энергия опустится ниже резерва 30%' },
+  'thermal_limit': { label: '🌡️ Температурный предел', class: 'badge-danger', hint: 'Отказ: температура оборудования выходит за пределы 5..45°C' },
+  'calibration_required': { label: '🔧 Нужна калибровка', class: 'badge-warning', hint: 'Отказ: калибровка устарела (>= 48 шагов)' },
+  'no_contact': { label: '📡 Нет связи', class: 'badge-warning', hint: 'Отказ: связь со станцией или ретрансляция недоступна на шаге' },
+  'ground_capacity': { label: '🛑 Лимит наземной связи', class: 'badge-danger', hint: 'Отказ: максимум 2 одновременных downlink на группировку' },
+  'duplicate_job_in_step': { label: 'Конфликт назначения', class: 'badge-danger', hint: 'Отказ: над одним заданием не могут работать два аппарата сразу' },
+  'satellite_unavailable': { label: 'Аппарат недоступен', class: 'badge-danger', hint: 'Отказ: спутник на техобслуживании или в отказе (outage)' },
+  'outside_job_window': { label: 'Вне окна задачи', class: 'badge-danger', hint: 'Отказ: текущий шаг вне интервала выполнения задания' },
+  'ineligible_satellite': { label: 'Недопустимый аппарат', class: 'badge-danger', hint: 'Отказ: спутник не входит в список допустимых для этого задания' },
+  'already_completed': { label: 'Уже выполнено', class: 'badge-muted', hint: 'Задание уже полностью завершено ранее' },
+  'unknown_job': { label: 'Неизвестная задача', class: 'badge-danger', hint: 'Задание с таким ID отсутствует в системе' }
+};
+
 /**
  * Журнал последнего выполненного шага (last_step_rows)
  */
@@ -818,14 +909,12 @@ function renderLastStepTable() {
     const executedAction = row.executed || 'idle';
     const isRefused = requestedAction !== executedAction && requestedAction !== 'idle';
 
-    let reasonBadge = '';
-    if (row.reason === 'accepted') {
-      reasonBadge = '<span class="badge badge-success">accepted</span>';
-    } else if (row.reason === 'idle') {
-      reasonBadge = '<span class="badge badge-muted">idle</span>';
-    } else {
-      reasonBadge = `<span class="badge badge-danger" title="${row.reason}">${row.reason}</span>`;
-    }
+    const trans = REASON_TRANSLATIONS[row.reason] || {
+      label: row.reason,
+      class: row.reason === 'accepted' ? 'badge-success' : 'badge-danger',
+      hint: row.reason
+    };
+    const reasonBadge = `<span class="badge ${trans.class}" title="${trans.hint}">${trans.label}</span>`;
 
     html += `
       <tr class="${isRefused ? 'row-reserve-alert' : ''}">
@@ -1065,22 +1154,84 @@ function renderCompareModal(compData) {
   document.getElementById('compNameA').textContent = a.goal || 'A';
   document.getElementById('compNameB').textContent = b.goal || 'B';
 
-  document.getElementById('compA_jobsCompleted').textContent = sumA.jobs_completed !== undefined ? sumA.jobs_completed : '—';
-  document.getElementById('compB_jobsCompleted').textContent = sumB.jobs_completed !== undefined ? sumB.jobs_completed : '—';
+  const jobsA = sumA.jobs_completed !== undefined ? sumA.jobs_completed : 0;
+  const jobsB = sumB.jobs_completed !== undefined ? sumB.jobs_completed : 0;
+  const jobsDiff = jobsB - jobsA;
+  const jobsDiffBadge = jobsDiff !== 0 
+    ? `<span class="delta-badge ${jobsDiff > 0 ? 'delta-pos' : 'delta-neg'}">${jobsDiff > 0 ? '+' : ''}${jobsDiff}</span>` 
+    : '';
+  document.getElementById('compA_jobsCompleted').textContent = jobsA;
+  document.getElementById('compB_jobsCompleted').innerHTML = `${jobsB} ${jobsDiffBadge}`;
 
-  document.getElementById('compA_critJobs').textContent = 
-    `${sumA.critical_jobs_completed_on_time || 0} / ${sumA.critical_jobs_due || 0}`;
-  document.getElementById('compB_critJobs').textContent = 
-    `${sumB.critical_jobs_completed_on_time || 0} / ${sumB.critical_jobs_due || 0}`;
+  const critA = sumA.critical_jobs_completed_on_time || 0;
+  const critDueA = sumA.critical_jobs_due || 0;
+  const critB = sumB.critical_jobs_completed_on_time || 0;
+  const critDueB = sumB.critical_jobs_due || 0;
+  const critDiff = critB - critA;
+  const critDiffBadge = critDiff !== 0
+    ? `<span class="delta-badge ${critDiff > 0 ? 'delta-pos' : 'delta-neg'}">${critDiff > 0 ? '+' : ''}${critDiff}</span>`
+    : '';
+  document.getElementById('compA_critJobs').textContent = `${critA} / ${critDueA}`;
+  document.getElementById('compB_critJobs').innerHTML = `${critB} / ${critDueB} ${critDiffBadge}`;
 
-  document.getElementById('compA_revenue').textContent = `$${(sumA.revenue_usd || 0).toFixed(2)}`;
-  document.getElementById('compB_revenue').textContent = `$${(sumB.revenue_usd || 0).toFixed(2)}`;
+  const revA = sumA.revenue_usd || 0;
+  const revB = sumB.revenue_usd || 0;
+  const revDiff = revB - revA;
+  const revDiffBadge = revDiff !== 0
+    ? `<span class="delta-badge ${revDiff > 0 ? 'delta-pos' : 'delta-neg'}">${revDiff > 0 ? '+' : ''}$${revDiff.toFixed(2)}</span>`
+    : '';
+  document.getElementById('compA_revenue').textContent = `$${revA.toFixed(2)}`;
+  document.getElementById('compB_revenue').innerHTML = `$${revB.toFixed(2)} ${revDiffBadge}`;
 
-  document.getElementById('compA_minSoc').textContent = `${(sumA.minimum_soc_pct || 0).toFixed(1)}%`;
-  document.getElementById('compB_minSoc').textContent = `${(sumB.minimum_soc_pct || 0).toFixed(1)}%`;
+  const minSocA = sumA.minimum_soc_pct !== undefined ? sumA.minimum_soc_pct : 0;
+  const minSocB = sumB.minimum_soc_pct !== undefined ? sumB.minimum_soc_pct : 0;
+  const socDiff = minSocB - minSocA;
+  const socDiffBadge = socDiff !== 0
+    ? `<span class="delta-badge ${socDiff > 0 ? 'delta-pos' : 'delta-neg'}">${socDiff > 0 ? '+' : ''}${socDiff.toFixed(1)}%</span>`
+    : '';
+  document.getElementById('compA_minSoc').textContent = `${Number(minSocA).toFixed(1)}%`;
+  document.getElementById('compB_minSoc').innerHTML = `${Number(minSocB).toFixed(1)}% ${socDiffBadge}`;
 
-  document.getElementById('compA_belowReserve').textContent = `${sumA.below_reserve_satellite_steps || 0} шагов`;
-  document.getElementById('compB_belowReserve').textContent = `${sumB.below_reserve_satellite_steps || 0} шагов`;
+  const belowA = sumA.below_reserve_satellite_steps || 0;
+  const belowB = sumB.below_reserve_satellite_steps || 0;
+  const belowDiff = belowB - belowA;
+  const belowDiffBadge = belowDiff !== 0
+    ? `<span class="delta-badge ${belowDiff < 0 ? 'delta-pos' : 'delta-neg'}">${belowDiff > 0 ? '+' : ''}${belowDiff}</span>`
+    : '';
+  document.getElementById('compA_belowReserve').textContent = `${belowA} шагов`;
+  document.getElementById('compB_belowReserve').innerHTML = `${belowB} шагов ${belowDiffBadge}`;
+
+  // Отрисовка остаточного заряда ключевых аппаратов (terminal_soc_pct)
+  const termAContainer = document.getElementById('compA_terminalSoc');
+  const termBContainer = document.getElementById('compB_terminalSoc');
+  
+  if (sumA.terminal_soc_pct && Object.keys(sumA.terminal_soc_pct).length > 0) {
+    let termAHtml = '<div class="terminal-soc-title">Остаточный заряд аппаратов:</div>';
+    for (const [sid, soc] of Object.entries(sumA.terminal_soc_pct)) {
+      termAHtml += `
+        <div class="terminal-soc-item">
+          <span>${sid}:</span>
+          <strong>${Number(soc).toFixed(1)}%</strong>
+        </div>`;
+    }
+    termAContainer.innerHTML = termAHtml;
+  } else {
+    termAContainer.innerHTML = '';
+  }
+
+  if (sumB.terminal_soc_pct && Object.keys(sumB.terminal_soc_pct).length > 0) {
+    let termBHtml = '<div class="terminal-soc-title">Остаточный заряд аппаратов:</div>';
+    for (const [sid, soc] of Object.entries(sumB.terminal_soc_pct)) {
+      termBHtml += `
+        <div class="terminal-soc-item">
+          <span>${sid}:</span>
+          <strong>${Number(soc).toFixed(1)}%</strong>
+        </div>`;
+    }
+    termBContainer.innerHTML = termBHtml;
+  } else {
+    termBContainer.innerHTML = '';
+  }
 
   // Вердикт
   document.getElementById('verdictText').textContent = compData.verdict || 'Сравнение выполнено успешно.';
@@ -1426,6 +1577,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const goalB = document.getElementById('compareGoalB').value;
     const compData = await apiCompare(goalA, goalB);
     renderCompareModal(compData);
+  });
+
+  // ==========================
+  // МОДАЛКА: ТЕЛЕМЕТРИЯ СПУТНИКА
+  // ==========================
+  const modalSatDetail = document.getElementById('modalSatDetail');
+  document.getElementById('btnCloseSatDetailModal').addEventListener('click', () => {
+    modalSatDetail.classList.add('hidden');
+  });
+  document.getElementById('btnCloseSatDetailModalBtn').addEventListener('click', () => {
+    modalSatDetail.classList.add('hidden');
   });
 
   // ==========================

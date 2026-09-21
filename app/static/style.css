@@ -650,6 +650,17 @@ body {
   accent-color: var(--color-accent);
 }
 
+.sat-clickable {
+  cursor: pointer;
+  color: var(--color-accent);
+  text-decoration: underline dotted;
+  transition: color 0.15s;
+}
+
+.sat-clickable:hover {
+  color: #93c5fd;
+}
+
 /* ==========================================================================
    ГРАФИКИ
    ========================================================================== */
@@ -1016,6 +1027,42 @@ body {
   padding: 14px;
   margin-top: 10px;
 }
+
+.terminal-soc-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+}
+
+.terminal-soc-title {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.terminal-soc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.delta-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  margin-left: 6px;
+  font-family: var(--font-mono);
+}
+.delta-pos { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+.delta-neg { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+.delta-zero { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
 
 .verdict-header {
   display: flex;
