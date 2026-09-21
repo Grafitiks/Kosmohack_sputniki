@@ -318,8 +318,30 @@ def build_state(session_id: str, record: SessionRecord) -> dict:
             'available': env.available(sid),
         })
 
+    # Кэш физической выполнимости заданий по окнам радиоконтакта
+    impossible_cache = getattr(env, '_impossible_jobs_cache', None)
+    if impossible_cache is None:
+        impossible_cache = {}
+        for j in env.jobs.values():
+            kind = j['kind']
+            rel, dl = j['release_step'], j['deadline_step']
+            sats = j['eligible_satellites']
+            c = sum(any(env.s['environment'][sid][kind + '_available'][t] for sid in sats) for t in range(rel, dl))
+            impossible_cache[j['id']] = (c, c < j['work_steps'])
+        env._impossible_jobs_cache = impossible_cache
+
     jobs = []
     for j in env.jobs.values():
+        c_info = impossible_cache.get(j['id'])
+        if c_info is None:
+            kind = j['kind']
+            rel, dl = j['release_step'], j['deadline_step']
+            sats = j['eligible_satellites']
+            c = sum(any(env.s['environment'][sid][kind + '_available'][t] for sid in sats) for t in range(rel, dl))
+            c_info = (c, c < j['work_steps'])
+            impossible_cache[j['id']] = c_info
+        contact_steps, is_impossible = c_info
+
         jobs.append({
             'id': j['id'],
             'kind': j['kind'],
@@ -332,6 +354,8 @@ def build_state(session_id: str, record: SessionRecord) -> dict:
             'eligible_satellites': j['eligible_satellites'],
             'status': job_status(j, step),
             'completed_step': j['completed_step'],
+            'contact_steps': contact_steps,
+            'impossible': is_impossible,
         })
 
     # Ряды заряда и температуры по шагам: индекс 0 — начальное состояние,

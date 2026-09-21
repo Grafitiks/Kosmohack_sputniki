@@ -1181,15 +1181,27 @@ function renderJobsTable() {
     // Комментарий оператору
     let comment = '—';
     if (job.status === 'missed') {
-      if (AppState.step >= job.deadline_step) {
+      if (job.impossible) {
+        comment = `<span class="text-warning" title="Суммарная длительность окон контакта до дедлайна: ${job.contact_steps} ш., а требуется ${job.work_steps} ш.">⚠️ Дефицит окон связи (окно ${job.contact_steps} из ${job.work_steps} ш.)</span>`;
+      } else if (AppState.step >= job.deadline_step) {
         comment = `<span class="text-danger">Истёк срок на шаге ${job.deadline_step}</span>`;
       } else {
         comment = `<span class="text-danger">Сорвано (дефицит ресурсов)</span>`;
       }
     } else if (job.status === 'done') {
-      comment = `<span class="text-success">Завершено на шаге ${job.completed_step || '—'}</span>`;
+      comment = `<span class="text-success">Завершено на шаге ${job.completed_step !== null && job.completed_step !== undefined ? job.completed_step : '—'}</span>`;
     } else if (job.status === 'active') {
-      comment = `Выполняется`;
+      if (job.impossible) {
+        comment = `<span class="text-warning" title="Окна радиовидимости: ${job.contact_steps} из ${job.work_steps} ш.">⚠️ Не успеть по радиоокнам (${job.contact_steps} из ${job.work_steps} ш.)</span>`;
+      } else {
+        comment = `<span class="text-info">В работе / в очереди</span>`;
+      }
+    } else if (job.status === 'waiting') {
+      if (job.impossible) {
+        comment = `<span class="text-warning" title="Окна радиовидимости: ${job.contact_steps} из ${job.work_steps} ш.">⚠️ Дефицит окон (${job.contact_steps} из ${job.work_steps} ш.)</span>`;
+      } else {
+        comment = `Старт на шаге ${job.release_step}`;
+      }
     }
 
     html += `
