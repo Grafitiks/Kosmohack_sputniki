@@ -139,7 +139,7 @@ async function loadMockScenarios() {
 /**
  * Старт новой смены: POST /api/sessions
  */
-async function apiStartSession(scenarioId, goal, customJson = null) {
+async function apiStartSession(scenarioId, goal, customJson = null, overrides = null) {
   showLoader('Создание новой смены...');
   hideAlert();
   
@@ -148,6 +148,10 @@ async function apiStartSession(scenarioId, goal, customJson = null) {
       const payload = customJson 
         ? { scenario: customJson, goal: goal }
         : { scenario_id: scenarioId, goal: goal };
+      
+      if (overrides && Object.keys(overrides).length > 0) {
+        payload.overrides = overrides;
+      }
         
       const res = await fetch('/api/sessions', {
         method: 'POST',
@@ -560,11 +564,89 @@ function simulateMockStep(count) {
 function renderAll() {
   renderHeaderAndKPI();
   renderTimeline();
+  renderRiskRadar();
   renderFleetMatrix();
   renderSatellitesTable();
   renderJobsTable();
   renderLastStepTable();
   renderCharts();
+}
+
+/**
+ * Предиктивный радар рисков (СППР · Критерий О7)
+ */
+function renderRiskRadar() {
+  const container = document.getElementById('radarAlertsList');
+  const summaryEl = document.getElementById('radarSummaryStats');
+  if (!container) return;
+
+  const alerts = [];
+  const currentStep = AppState.step;
+
+  // 1. Проверка истекающей калибровки (осталось 5 шагов или меньше)
+  AppState.satellites.forEach(sat => {
+    const validSteps = sat.calibration_valid_steps || 48;
+    const remaining = validSteps - (sat.calibration_age_steps || 0);
+    if (remaining <= 0) {
+      alerts.push({
+        type: 'danger',
+        text: `🔧 <strong>${sat.id}</strong>: калибровка ИСТЕКЛА! Задания заблокированы`
+      });
+    } else if (remaining <= 5) {
+      alerts.push({
+        type: 'warn',
+        text: `🔧 <strong>${sat.id}</strong>: калибровка истекает через ${remaining} ш.`
+      });
+    }
+  });
+
+  // 2. Проверка приближения к резерву энергии (< 35%) и отказов
+  AppState.satellites.forEach(sat => {
+    if (!sat.available) {
+      alerts.push({
+        type: 'danger',
+        text: `🛑 <strong>${sat.id}</strong>: аппарат выведен из строя (outage)`
+      });
+    } else if (sat.soc_pct < AppState.model.critical_soc_pct) {
+      alerts.push({
+        type: 'danger',
+        text: `🚨 <strong>${sat.id}</strong>: критический дефицит ${Number(sat.soc_pct).toFixed(1)}% (&lt;20%)!`
+      });
+    } else if (sat.soc_pct < AppState.model.reserve_soc_pct + 5.0) {
+      alerts.push({
+        type: 'warn',
+        text: `⚡ <strong>${sat.id}</strong>: заряд ${Number(sat.soc_pct).toFixed(1)}% близок к резерву (30%)`
+      });
+    }
+  });
+
+  // 3. Проверка критических заданий (priority 3), приближающихся к дедлайну
+  AppState.jobs.forEach(job => {
+    if (job.status !== 'done' && job.priority === 3) {
+      const remainingWork = job.remaining_steps !== undefined ? job.remaining_steps : job.work_steps;
+      const stepsToDeadline = job.deadline_step - currentStep;
+      if (stepsToDeadline > 0 && stepsToDeadline <= remainingWork + 2) {
+        alerts.push({
+          type: 'danger',
+          text: `⏳ <strong>${job.id}</strong> [Пр.3]: дедлайн ш.${job.deadline_step}! Осталось ${remainingWork} ш. работы из ${stepsToDeadline}`
+        });
+      }
+    }
+  });
+
+  if (alerts.length === 0) {
+    if (summaryEl) summaryEl.textContent = 'Все системы в норме (резерв и калибровка соблюдены)';
+    container.innerHTML = '<span class="radar-empty"><svg style="width:14px;height:14px;display:inline-block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Рисков не обнаружено: заряд аккумуляторов, температурные коридоры и сроки калибровки в штатном допуске</span>';
+  } else {
+    const dangerCount = alerts.filter(a => a.type === 'danger').length;
+    const warnCount = alerts.filter(a => a.type === 'warn').length;
+    if (summaryEl) summaryEl.textContent = `Критических рисков: ${dangerCount} | Внимания: ${warnCount}`;
+    container.innerHTML = alerts.slice(0, 8).map(a => `
+      <div class="radar-pill ${a.type === 'danger' ? 'radar-pill-danger' : 'radar-pill-warn'}">
+        ${a.text}
+      </div>
+    `).join('') + (alerts.length > 8 ? `<span class="radar-pill radar-pill-info">+ ещё ${alerts.length - 8}</span>` : '');
+  }
 }
 
 /**
@@ -699,6 +781,33 @@ function renderHeaderAndKPI() {
 
   const belowSteps = AppState.summary.below_reserve_satellite_steps || 0;
   document.getElementById('kpiBelowReserve').textContent = `Ниже резерва: ${belowSteps} шагов`;
+
+  // Потери в незавершённых задачах (work_steps_in_missed_jobs)
+  const missedWorkSteps = AppState.summary.work_steps_in_missed_jobs || 0;
+  const elMissedLoss = document.getElementById('kpiMissedLoss');
+  if (elMissedLoss) {
+    elMissedLoss.textContent = `Потери: ${missedWorkSteps} ш. в сорванных`;
+    if (missedWorkSteps > 0) elMissedLoss.classList.add('kpi-sub-alert');
+    else elMissedLoss.classList.remove('kpi-sub-alert');
+  }
+
+  // Отклоненные команды (blocked_command_count)
+  const blockedCount = AppState.summary.blocked_command_count || 0;
+  const elBlocked = document.getElementById('kpiBlockedCount');
+  if (elBlocked) {
+    elBlocked.textContent = `Отклонено команд: ${blockedCount}`;
+    if (blockedCount > 0) elBlocked.classList.add('kpi-sub-alert');
+    else elBlocked.classList.remove('kpi-sub-alert');
+  }
+
+  // Критический дефицит (<20%) (critical_soc_satellite_steps)
+  const critSocSteps = AppState.summary.critical_soc_satellite_steps || 0;
+  const elCritSoc = document.getElementById('kpiCriticalSocCount');
+  if (elCritSoc) {
+    elCritSoc.textContent = `Дефицит (<20%): ${critSocSteps} шагов`;
+    if (critSocSteps > 0) elCritSoc.classList.add('kpi-sub-alert');
+    else elCritSoc.classList.remove('kpi-sub-alert');
+  }
 
   // Счётчики в заголовках вкладок
   document.getElementById('satCount').textContent = AppState.satellites.length;
@@ -1495,12 +1604,63 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Тоггл блока экспериментальных параметров (overrides)
+  const chkEnableOverrides = document.getElementById('chkEnableOverrides');
+  const overridesBody = document.getElementById('overridesBody');
+  if (document.getElementById('toggleOverrides')) {
+    document.getElementById('toggleOverrides').addEventListener('click', () => {
+      chkEnableOverrides.checked = !chkEnableOverrides.checked;
+      if (chkEnableOverrides.checked) overridesBody.classList.remove('hidden');
+      else overridesBody.classList.add('hidden');
+    });
+    chkEnableOverrides.addEventListener('change', () => {
+      if (chkEnableOverrides.checked) overridesBody.classList.remove('hidden');
+      else overridesBody.classList.add('hidden');
+    });
+  }
+
   document.getElementById('btnConfirmStartSession').addEventListener('click', async () => {
     const goal = document.querySelector('input[name="startGoal"]:checked').value;
     const scenarioId = document.getElementById('selectScenarioPreset').value;
     const customJson = AppState.customScenarioJson;
 
-    const success = await apiStartSession(scenarioId, goal, customJson);
+    let overrides = null;
+    if (chkEnableOverrides && chkEnableOverrides.checked) {
+      overrides = {};
+      const satSoc = document.getElementById('overrideSocSat').value.trim();
+      const valSoc = parseFloat(document.getElementById('overrideSocVal').value);
+      if (satSoc && !isNaN(valSoc)) {
+        overrides.initial_soc_pct = { satellite_id: satSoc, value: valSoc };
+      }
+
+      const solFactor = parseFloat(document.getElementById('overrideSolarFactor').value);
+      const solSat = document.getElementById('overrideSolarSat').value.trim();
+      if (!isNaN(solFactor)) {
+        overrides.solar_factor = { value: solFactor };
+        if (solSat && solSat.toLowerCase() !== 'все' && solSat.toLowerCase() !== 'all') {
+          overrides.solar_factor.satellite_id = solSat;
+        }
+      }
+
+      const jobId = document.getElementById('overrideJobId').value.trim();
+      const jobPrio = parseInt(document.getElementById('overrideJobPriority').value, 10);
+      if (jobId && !isNaN(jobPrio)) {
+        overrides.priority = { job_id: jobId, value: jobPrio };
+      }
+
+      const outSat = document.getElementById('overrideOutageSat').value.trim();
+      const outStart = parseInt(document.getElementById('overrideOutageStart').value, 10);
+      const outEnd = parseInt(document.getElementById('overrideOutageEnd').value, 10);
+      if (outSat && !isNaN(outStart) && !isNaN(outEnd)) {
+        overrides.outage = { satellite_id: outSat, start_step: outStart, end_step: outEnd };
+      }
+
+      if (Object.keys(overrides).length === 0) {
+        overrides = null;
+      }
+    }
+
+    const success = await apiStartSession(scenarioId, goal, customJson, overrides);
     if (success) {
       modalNewSession.classList.add('hidden');
     }
@@ -1513,8 +1673,153 @@ document.addEventListener('DOMContentLoaded', () => {
   const eventErrorBox = document.getElementById('eventErrorBox');
   const eventErrorText = document.getElementById('eventErrorText');
 
+  const DEMO_EVENT_PRESETS = {
+    preset_e1: {
+      id: "E-01",
+      at_step: 72,
+      type: "add_jobs",
+      jobs: [
+        { id: "URG-P-01", kind: "relay", release_step: 72, deadline_step: 80, work_steps: 3, eligible_satellites: ["S08", "S10", "S12"], priority: 3, value_usd: 40 },
+        { id: "URG-P-02", kind: "relay", release_step: 72, deadline_step: 82, work_steps: 4, eligible_satellites: ["S08", "S10", "S12"], priority: 3, value_usd: 70 },
+        { id: "URG-P-03", kind: "downlink", release_step: 72, deadline_step: 84, work_steps: 1, eligible_satellites: ["S01"], priority: 3, value_usd: 30 }
+      ]
+    },
+    preset_e2: {
+      id: "E-02",
+      at_step: 74,
+      type: "satellite_outage",
+      satellite_ids: ["S08", "S10"],
+      end_step: 90
+    },
+    preset_e3: {
+      id: "E-03",
+      at_step: 144,
+      type: "close_downlink",
+      satellite_ids: Array.from({ length: 48 }, (_, i) => `S${String(i + 1).padStart(2, '0')}`),
+      end_step: 156
+    },
+    preset_e4: {
+      id: "E-04",
+      at_step: 146,
+      type: "add_jobs",
+      jobs: [
+        { id: "URG-P-04", kind: "downlink", release_step: 146, deadline_step: 150, work_steps: 2, eligible_satellites: ["S03"], priority: 3, value_usd: 50 }
+      ]
+    }
+  };
+
+  function loadEventIntoForm(evt) {
+    if (!evt) return;
+    document.getElementById('eventIdInput').value = evt.id || `E-${AppState.step + 1}`;
+    document.getElementById('eventTypeSelect').value = evt.type || 'add_jobs';
+    
+    if (evt.type === 'add_jobs') {
+      document.getElementById('fieldsOutageOrDownlink').classList.add('hidden');
+      document.getElementById('fieldsAddJob').classList.remove('hidden');
+      const j = (evt.jobs && evt.jobs[0]) || {};
+      document.getElementById('newJobId').value = j.id || `JOB-NEW-${Date.now()}`;
+      document.getElementById('newJobKind').value = j.kind || 'downlink';
+      document.getElementById('newJobPriority').value = j.priority || 3;
+      document.getElementById('newJobRelease').value = j.release_step !== undefined ? j.release_step : AppState.step;
+      document.getElementById('newJobDeadline').value = j.deadline_step !== undefined ? j.deadline_step : (AppState.step + 12);
+      document.getElementById('newJobWorkSteps').value = j.work_steps || 2;
+      document.getElementById('newJobValue').value = j.value_usd || 25.0;
+      document.getElementById('newJobSats').value = (j.eligible_satellites || ['S01']).join(', ');
+    } else {
+      document.getElementById('fieldsOutageOrDownlink').classList.remove('hidden');
+      document.getElementById('fieldsAddJob').classList.add('hidden');
+      document.getElementById('eventSatellitesInput').value = (evt.satellite_ids || []).join(', ');
+      document.getElementById('eventEndStepInput').value = evt.end_step !== undefined ? evt.end_step : (AppState.step + 12);
+    }
+    document.getElementById('rawEventJson').value = JSON.stringify(evt, null, 2);
+  }
+
+  const selectEventPreset = document.getElementById('selectEventPreset');
+  if (selectEventPreset) {
+    selectEventPreset.addEventListener('change', (e) => {
+      const key = e.target.value;
+      if (DEMO_EVENT_PRESETS[key]) {
+        const preset = JSON.parse(JSON.stringify(DEMO_EVENT_PRESETS[key]));
+        loadEventIntoForm(preset);
+        showAlert(`Пресет ${preset.id} (${preset.type}) загружен в форму.`);
+      }
+    });
+  }
+
+  const btnAdapt = document.getElementById('btnAdaptEventToCurrentStep');
+  if (btnAdapt) {
+    btnAdapt.addEventListener('click', () => {
+      const isRaw = document.querySelector('.event-pill-tab.active').dataset.eventMode === 'raw';
+      if (isRaw) {
+        try {
+          let parsed = JSON.parse(document.getElementById('rawEventJson').value);
+          if (parsed.events && Array.isArray(parsed.events)) {
+            parsed = parsed.events[0];
+          }
+          const delta = AppState.step - (parsed.at_step || 0);
+          parsed.at_step = AppState.step;
+          if (parsed.end_step !== undefined) parsed.end_step = Math.max(AppState.step + 1, parsed.end_step + delta);
+          if (parsed.jobs && Array.isArray(parsed.jobs)) {
+            parsed.jobs.forEach(j => {
+              j.release_step = Math.max(AppState.step, (j.release_step || 0) + delta);
+              j.deadline_step = Math.max(j.release_step + 1, (j.deadline_step || 0) + delta);
+            });
+          }
+          document.getElementById('rawEventJson').value = JSON.stringify(parsed, null, 2);
+          loadEventIntoForm(parsed);
+        } catch (e) {}
+      } else {
+        const type = document.getElementById('eventTypeSelect').value;
+        if (type === 'add_jobs') {
+          const release = parseInt(document.getElementById('newJobRelease').value, 10) || 0;
+          const deadline = parseInt(document.getElementById('newJobDeadline').value, 10) || 12;
+          const dur = Math.max(2, deadline - release);
+          document.getElementById('newJobRelease').value = AppState.step;
+          document.getElementById('newJobDeadline').value = AppState.step + dur;
+        } else {
+          const endStep = parseInt(document.getElementById('eventEndStepInput').value, 10) || 0;
+          const dur = Math.max(6, endStep - AppState.step);
+          document.getElementById('eventEndStepInput').value = AppState.step + dur;
+        }
+      }
+      showAlert(`Событие успешно адаптировано под текущий шаг (${AppState.step})!`);
+    });
+  }
+
+  // Загрузка JSON файла событий
+  const fileEventInput = document.getElementById('fileEventInput');
+  if (fileEventInput) {
+    fileEventInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          const noticeEl = document.getElementById('eventFileNotice');
+          if (noticeEl) noticeEl.style.display = 'block';
+
+          let targetEvent = parsed;
+          if (parsed.events && Array.isArray(parsed.events)) {
+            targetEvent = parsed.events.find(ev => ev.at_step === AppState.step) || parsed.events[0];
+            if (noticeEl) noticeEl.textContent = `📁 Пакет ${file.name} (${parsed.events.length} событий). Выбрано: ${targetEvent.id} (Ш.${targetEvent.at_step}, ${targetEvent.type})`;
+          } else {
+            if (noticeEl) noticeEl.textContent = `📁 Загружено одиночное событие ${targetEvent.id || file.name}`;
+          }
+          loadEventIntoForm(targetEvent);
+        } catch (err) {
+          showAlert('Ошибка чтения файла события: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
   document.getElementById('btnOpenEventModal').addEventListener('click', () => {
     // Предзаполняем поля текущим шагом
+    const badge = document.getElementById('currentStepBadgeInModal');
+    if (badge) badge.textContent = AppState.step;
+
     document.getElementById('eventIdInput').value = `E-${AppState.step + 1}`;
     document.getElementById('eventEndStepInput').value = AppState.step + 12;
     document.getElementById('newJobRelease').value = AppState.step;
@@ -1584,7 +1889,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isRaw) {
       try {
-        eventPayload = JSON.parse(document.getElementById('rawEventJson').value);
+        let rawParsed = JSON.parse(document.getElementById('rawEventJson').value);
+        if (rawParsed.events && Array.isArray(rawParsed.events)) {
+          // Авто-извлечение из events_demo.json
+          const match = rawParsed.events.find(e => e.at_step === AppState.step) || rawParsed.events[0];
+          eventPayload = match;
+          showAlert(`Обнаружен пакет событий! Применено событие ${match.id} (Ш.${match.at_step})`);
+        } else {
+          eventPayload = rawParsed;
+        }
       } catch (err) {
         eventErrorText.textContent = 'Некорректный синтаксис JSON: ' + err.message;
         eventErrorBox.classList.remove('hidden');

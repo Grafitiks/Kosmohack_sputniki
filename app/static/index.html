@@ -150,6 +150,7 @@
         </div>
         <div class="panel-value text-accent" id="kpiJobs">0 <span class="val-sub">/ 5</span></div>
         <div class="panel-footer" id="kpiJobsSub">завершено из 5 наступивших</div>
+        <div class="kpi-sub-line" id="kpiMissedLoss">Потери: 0 шагов в сорванных</div>
       </div>
 
       <!-- Карточка 3: Срочные задания приоритета 3 -->
@@ -160,6 +161,7 @@
         </div>
         <div class="panel-value text-success" id="kpiCriticalJobs">0 <span class="val-sub">/ 0</span></div>
         <div class="panel-footer" id="kpiCriticalSub">приоритет 3 выполнен своевременно</div>
+        <div class="kpi-sub-line" id="kpiBlockedCount">Отклонено команд: 0</div>
       </div>
 
       <!-- Карточка 4: Выручка -->
@@ -180,6 +182,7 @@
         </div>
         <div class="panel-value" id="kpiMinSoc">44.4%</div>
         <div class="panel-footer" id="kpiBelowReserve">Ниже резерва (30%): 0 шагов</div>
+        <div class="kpi-sub-line" id="kpiCriticalSocCount">Дефицит (&lt;20%): 0 шагов</div>
       </div>
 
       <!-- Карточка 6: Цель управления -->
@@ -248,6 +251,20 @@
           <svg class="svg-btn-icon"><use href="#icon-zap"></use></svg>
           <span>Ввести оперативное событие</span>
         </button>
+      </div>
+    </section>
+
+    <!-- ПРЕДИКТИВНЫЙ РАДАР РИСКОВ (EARLY WARNING RADAR - КРИТЕРИЙ О7) -->
+    <section class="risk-radar-panel" id="riskRadarPanel">
+      <div class="radar-header">
+        <div class="radar-title-group">
+          <span class="radar-pulse"></span>
+          <span class="radar-title">ПРЕДИКТИВНЫЙ МОНИТОРИНГ РИСКОВ (СППР · КРИТЕРИЙ О7)</span>
+        </div>
+        <span class="radar-summary-stats" id="radarSummaryStats">Все системы в штатном режиме</span>
+      </div>
+      <div class="radar-alerts-list" id="radarAlertsList">
+        <span class="radar-empty">✓ Параметры энергобаланса и калибровки в зеленой зоне</span>
       </div>
     </section>
 
@@ -497,6 +514,64 @@
             </label>
           </div>
         </div>
+
+        <!-- БЛОК НАСТРОЙКИ НАЧАЛЬНЫХ УСЛОВИЙ (OVERRIDES ПО ТЗ С. 3) -->
+        <div class="overrides-accordion">
+          <div class="overrides-header" id="toggleOverrides">
+            <label class="checkbox-label" onclick="event.stopPropagation()">
+              <input type="checkbox" id="chkEnableOverrides" />
+              <strong>Параметры эксперимента (Overrides по ТЗ с. 3)</strong>
+            </label>
+            <span class="accordion-hint">▼ Заряд, Солнце, Приоритеты</span>
+          </div>
+          <div class="overrides-body hidden" id="overridesBody">
+            <div class="field-grid grid-2">
+              <div class="form-field">
+                <label>Начальный заряд спутника (initial_soc_pct):</label>
+                <div class="input-inline">
+                  <input type="text" id="overrideSocSat" placeholder="S01" class="form-input font-mono" style="width:90px;" />
+                  <input type="number" id="overrideSocVal" placeholder="38.0" step="1" min="0" max="100" class="form-input font-mono" />
+                  <span class="unit-label">%</span>
+                </div>
+                <span class="input-hint">Пример: S01 = 38% (как в сценарии P03_energy)</span>
+              </div>
+
+              <div class="form-field">
+                <label>Множитель солнца (solar_factor):</label>
+                <div class="input-inline">
+                  <input type="number" id="overrideSolarFactor" placeholder="0.40" step="0.05" min="0" class="form-input font-mono" />
+                  <input type="text" id="overrideSolarSat" placeholder="Все (или S01)" class="form-input font-mono" style="width:130px;" />
+                </div>
+                <span class="input-hint">0.40 = снижение мощности до 40%</span>
+              </div>
+            </div>
+
+            <div class="field-grid grid-2">
+              <div class="form-field">
+                <label>Приоритет существующего задания:</label>
+                <div class="input-inline">
+                  <input type="text" id="overrideJobId" placeholder="JOB-0001" class="form-input font-mono" />
+                  <select id="overrideJobPriority" class="form-input" style="width:110px;">
+                    <option value="3">Пр. 3 (Срочное)</option>
+                    <option value="2">Пр. 2 (Обычное)</option>
+                    <option value="1">Пр. 1 (Фоновое)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label>Плановый отказ аппарата (outage):</label>
+                <div class="input-inline">
+                  <input type="text" id="overrideOutageSat" placeholder="S01" class="form-input font-mono" style="width:80px;" />
+                  <input type="number" id="overrideOutageStart" placeholder="0" class="form-input font-mono" style="width:65px;" />
+                  <span class="unit-label">..</span>
+                  <input type="number" id="overrideOutageEnd" placeholder="12" class="form-input font-mono" style="width:65px;" />
+                </div>
+                <span class="input-hint">Интервал [start..end) шагов</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="window-footer">
@@ -519,6 +594,30 @@
           <button class="event-pill-tab active" data-event-mode="form">Интерактивный ввод</button>
           <button class="event-pill-tab" data-event-mode="raw">Сырой JSON (экспертный режим)</button>
         </div>
+
+        <!-- ПАНЕЛЬ БЫСТРЫХ ПРЕСЕТОВ ИЗ EVENTS_DEMO.JSON И ЗАГРУЗКА ФАЙЛА -->
+        <div class="event-preset-row">
+          <div style="flex:1; min-width:200px;">
+            <label style="font-size:11px; color:var(--text-tertiary); display:block; margin-bottom:4px;">Пресет из events_demo.json:</label>
+            <select id="selectEventPreset" class="form-input">
+              <option value="">-- Выбрать типовое событие --</option>
+              <option value="preset_e1">E-01 (Ш.72): Пакет 3 срочных заданий (URG-P-01..03)</option>
+              <option value="preset_e2">E-02 (Ш.74): Отказ спутников S08, S10 (до ш. 90)</option>
+              <option value="preset_e3">E-03 (Ш.144): Отмена связи Земли для всей группировки S01..S48</option>
+              <option value="preset_e4">E-04 (Ш.146): Срочный сброс данных URG-P-04 аппаратом S03</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:8px;">
+            <button type="button" class="btn btn-outline" id="btnAdaptEventToCurrentStep" title="Пересчитать шаги события относительно текущего шага смены">
+              Адаптировать под текущий шаг (Ш. <span id="currentStepBadgeInModal">0</span>)
+            </button>
+            <input type="file" id="fileEventInput" accept=".json" class="file-hidden-input" />
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('fileEventInput').click()" title="Загрузить событие из файла JSON">
+              📁 Файл .json
+            </button>
+          </div>
+        </div>
+        <div id="eventFileNotice" class="file-name-hint" style="margin-bottom:8px; display:none;"></div>
 
         <!-- РЕЖИМ 1: ФОРМА -->
         <div class="event-view-content active" id="eventModeForm">

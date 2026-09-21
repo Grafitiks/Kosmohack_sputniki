@@ -1381,6 +1381,187 @@ body {
 }
 
 /* ==========================================================================
+   РАДАР РИСКОВ И СППР (КРИТЕРИЙ О7 - EARLY WARNING RADAR)
+   ========================================================================== */
+.risk-radar-panel {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+}
+
+.radar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.radar-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.radar-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent);
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+
+.radar-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.radar-summary-stats {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+
+.radar-alerts-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.radar-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+}
+
+.radar-pill-warn {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+  color: #fbbf24;
+}
+
+.radar-pill-danger {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+}
+
+.radar-pill-info {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.08);
+  color: #38bdf8;
+}
+
+.radar-empty {
+  font-size: 11px;
+  color: var(--color-success);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ==========================================================================
+   НАСТРОЙКА ЭКСПЕРИМЕНТА (OVERRIDES ПО ТЗ С. 3)
+   ========================================================================== */
+.overrides-accordion {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-2);
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.overrides-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+
+.accordion-hint {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.overrides-body {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.input-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unit-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   ПРЕСЕТЫ И ФАЙЛЫ СОБЫТИЙ (EVENTS_DEMO.JSON)
+   ========================================================================== */
+.event-preset-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-surface-2);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.event-file-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.file-name-hint {
+  font-size: 11px;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+}
+
+.kpi-sub-line {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: 3px;
+  font-family: var(--font-mono);
+}
+
+.kpi-sub-alert {
+  color: #f87171 !important;
+}
+
+/* ==========================================================================
    АДАПТИВНОСТЬ
    ========================================================================== */
 @media (max-width: 960px) {
