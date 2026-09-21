@@ -1,0 +1,1171 @@
+{
+ "session_id": "abc123",
+ "scenario": "P01_intro",
+ "title": "Ознакомительная смена: 16 аппаратов",
+ "goal": "priority",
+ "step": 12,
+ "total_steps": 48,
+ "satellites": [
+  {
+   "id": "S01",
+   "capacity_wh": 140.0,
+   "soc_pct": 94.36,
+   "temp_c": 7.59,
+   "calibration_age_steps": 11,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S02",
+   "capacity_wh": 100.0,
+   "soc_pct": 90.53,
+   "temp_c": 6.34,
+   "calibration_age_steps": 24,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S03",
+   "capacity_wh": 140.0,
+   "soc_pct": 83.11,
+   "temp_c": 5.38,
+   "calibration_age_steps": 1,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S04",
+   "capacity_wh": 100.0,
+   "soc_pct": 93.1,
+   "temp_c": 7.54,
+   "calibration_age_steps": 7,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S05",
+   "capacity_wh": 140.0,
+   "soc_pct": 98.5,
+   "temp_c": 12.57,
+   "calibration_age_steps": 0,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S06",
+   "capacity_wh": 140.0,
+   "soc_pct": 96.31,
+   "temp_c": 13.47,
+   "calibration_age_steps": 11,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S07",
+   "capacity_wh": 120.0,
+   "soc_pct": 93.49,
+   "temp_c": 14.39,
+   "calibration_age_steps": 30,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S08",
+   "capacity_wh": 120.0,
+   "soc_pct": 85.4,
+   "temp_c": 16.17,
+   "calibration_age_steps": 7,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S09",
+   "capacity_wh": 140.0,
+   "soc_pct": 100.0,
+   "temp_c": 17.72,
+   "calibration_age_steps": 4,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S10",
+   "capacity_wh": 100.0,
+   "soc_pct": 100.0,
+   "temp_c": 19.37,
+   "calibration_age_steps": 14,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S11",
+   "capacity_wh": 140.0,
+   "soc_pct": 100.0,
+   "temp_c": 19.76,
+   "calibration_age_steps": 15,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S12",
+   "capacity_wh": 140.0,
+   "soc_pct": 100.0,
+   "temp_c": 19.93,
+   "calibration_age_steps": 26,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S13",
+   "capacity_wh": 100.0,
+   "soc_pct": 100.0,
+   "temp_c": 20.92,
+   "calibration_age_steps": 25,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S14",
+   "capacity_wh": 100.0,
+   "soc_pct": 98.42,
+   "temp_c": 17.04,
+   "calibration_age_steps": 11,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S15",
+   "capacity_wh": 100.0,
+   "soc_pct": 96.84,
+   "temp_c": 14.91,
+   "calibration_age_steps": 29,
+   "calibration_valid_steps": 48,
+   "available": true
+  },
+  {
+   "id": "S16",
+   "capacity_wh": 120.0,
+   "soc_pct": 94.74,
+   "temp_c": 9.1,
+   "calibration_age_steps": 16,
+   "calibration_valid_steps": 48,
+   "available": true
+  }
+ ],
+ "jobs": [
+  {
+   "id": "JOB-0001",
+   "kind": "downlink",
+   "priority": 3,
+   "value_usd": 10.42,
+   "release_step": 0,
+   "deadline_step": 19,
+   "work_steps": 1,
+   "remaining_steps": 1,
+   "eligible_satellites": [
+    "S01"
+   ],
+   "status": "active",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0002",
+   "kind": "downlink",
+   "priority": 3,
+   "value_usd": 16.67,
+   "release_step": 0,
+   "deadline_step": 13,
+   "work_steps": 2,
+   "remaining_steps": 2,
+   "eligible_satellites": [
+    "S02"
+   ],
+   "status": "active",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0003",
+   "kind": "downlink",
+   "priority": 3,
+   "value_usd": 20.83,
+   "release_step": 0,
+   "deadline_step": 17,
+   "work_steps": 2,
+   "remaining_steps": 2,
+   "eligible_satellites": [
+    "S03"
+   ],
+   "status": "active",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0004",
+   "kind": "downlink",
+   "priority": 3,
+   "value_usd": 25.0,
+   "release_step": 1,
+   "deadline_step": 21,
+   "work_steps": 2,
+   "remaining_steps": 2,
+   "eligible_satellites": [
+    "S12"
+   ],
+   "status": "active",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0005",
+   "kind": "downlink",
+   "priority": 3,
+   "value_usd": 25.0,
+   "release_step": 3,
+   "deadline_step": 14,
+   "work_steps": 2,
+   "remaining_steps": 2,
+   "eligible_satellites": [
+    "S13"
+   ],
+   "status": "active",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0006",
+   "kind": "downlink",
+   "priority": 3,
+   "value_usd": 12.5,
+   "release_step": 0,
+   "deadline_step": 18,
+   "work_steps": 1,
+   "remaining_steps": 1,
+   "eligible_satellites": [
+    "S16"
+   ],
+   "status": "active",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0007",
+   "kind": "relay",
+   "priority": 2,
+   "value_usd": 13.33,
+   "release_step": 0,
+   "deadline_step": 14,
+   "work_steps": 2,
+   "remaining_steps": 2,
+   "eligible_satellites": [
+    "S09",
+    "S08"
+   ],
+   "status": "active",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0008",
+   "kind": "relay",
+   "priority": 2,
+   "value_usd": 10.0,
+   "release_step": 0,
+   "deadline_step": 10,
+   "work_steps": 1,
+   "remaining_steps": 1,
+   "eligible_satellites": [
+    "S08",
+    "S06",
+    "S04",
+    "S14"
+   ],
+   "status": "missed",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0009",
+   "kind": "relay",
+   "priority": 2,
+   "value_usd": 30.0,
+   "release_step": 2,
+   "deadline_step": 6,
+   "work_steps": 3,
+   "remaining_steps": 3,
+   "eligible_satellites": [
+    "S04",
+    "S16",
+    "S01"
+   ],
+   "status": "missed",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0010",
+   "kind": "relay",
+   "priority": 2,
+   "value_usd": 20.0,
+   "release_step": 2,
+   "deadline_step": 13,
+   "work_steps": 2,
+   "remaining_steps": 2,
+   "eligible_satellites": [
+    "S02",
+    "S15",
+    "S04",
+    "S16"
+   ],
+   "status": "active",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0011",
+   "kind": "relay",
+   "priority": 2,
+   "value_usd": 25.0,
+   "release_step": 4,
+   "deadline_step": 9,
+   "work_steps": 3,
+   "remaining_steps": 3,
+   "eligible_satellites": [
+    "S12",
+    "S11",
+    "S04"
+   ],
+   "status": "missed",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0012",
+   "kind": "relay",
+   "priority": 2,
+   "value_usd": 20.0,
+   "release_step": 4,
+   "deadline_step": 11,
+   "work_steps": 2,
+   "remaining_steps": 2,
+   "eligible_satellites": [
+    "S08",
+    "S12"
+   ],
+   "status": "missed",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0013",
+   "kind": "relay",
+   "priority": 2,
+   "value_usd": 8.33,
+   "release_step": 6,
+   "deadline_step": 13,
+   "work_steps": 1,
+   "remaining_steps": 1,
+   "eligible_satellites": [
+    "S01",
+    "S06",
+    "S13",
+    "S03"
+   ],
+   "status": "active",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0014",
+   "kind": "relay",
+   "priority": 2,
+   "value_usd": 8.33,
+   "release_step": 6,
+   "deadline_step": 12,
+   "work_steps": 1,
+   "remaining_steps": 1,
+   "eligible_satellites": [
+    "S04",
+    "S06",
+    "S03",
+    "S14"
+   ],
+   "status": "missed",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0015",
+   "kind": "relay",
+   "priority": 2,
+   "value_usd": 10.0,
+   "release_step": 8,
+   "deadline_step": 17,
+   "work_steps": 1,
+   "remaining_steps": 1,
+   "eligible_satellites": [
+    "S10",
+    "S14"
+   ],
+   "status": "active",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0016",
+   "kind": "relay",
+   "priority": 2,
+   "value_usd": 8.33,
+   "release_step": 8,
+   "deadline_step": 21,
+   "work_steps": 1,
+   "remaining_steps": 1,
+   "eligible_satellites": [
+    "S05",
+    "S16",
+    "S12",
+    "S08"
+   ],
+   "status": "active",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0017",
+   "kind": "relay",
+   "priority": 2,
+   "value_usd": 16.67,
+   "release_step": 10,
+   "deadline_step": 18,
+   "work_steps": 2,
+   "remaining_steps": 2,
+   "eligible_satellites": [
+    "S04",
+    "S11",
+    "S13",
+    "S12"
+   ],
+   "status": "active",
+   "completed_step": null
+  },
+  {
+   "id": "JOB-0018",
+   "kind": "relay",
+   "priority": 2,
+   "value_usd": 25.0,
+   "release_step": 10,
+   "deadline_step": 21,
+   "work_steps": 3,
+   "remaining_steps": 3,
+   "eligible_satellites": [
+    "S01",
+    "S06"
+   ],
+   "status": "active",
+   "completed_step": null
+  }
+ ],
+ "series": {
+  "steps": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12
+  ],
+  "soc_pct": {
+   "S01": [
+    68.25,
+    73.01,
+    78.87,
+    84.73,
+    90.59,
+    96.45,
+    100.0,
+    100.0,
+    98.87,
+    97.74,
+    96.62,
+    95.49,
+    94.36
+   ],
+   "S02": [
+    65.17,
+    72.61,
+    80.04,
+    87.48,
+    94.92,
+    100.0,
+    100.0,
+    98.42,
+    96.84,
+    95.26,
+    93.68,
+    92.11,
+    90.53
+   ],
+   "S03": [
+    62.96,
+    68.82,
+    74.68,
+    80.54,
+    86.4,
+    92.26,
+    91.13,
+    90.0,
+    88.87,
+    87.75,
+    86.62,
+    84.24,
+    83.11
+   ],
+   "S04": [
+    82.04,
+    90.24,
+    98.45,
+    100.0,
+    100.0,
+    96.67,
+    95.09,
+    93.51,
+    91.93,
+    90.35,
+    88.77,
+    87.19,
+    93.1
+   ],
+   "S05": [
+    80.93,
+    86.24,
+    91.55,
+    90.43,
+    89.3,
+    88.17,
+    87.04,
+    85.91,
+    84.79,
+    83.66,
+    88.97,
+    94.28,
+    98.5
+   ],
+   "S06": [
+    78.74,
+    82.96,
+    81.83,
+    80.7,
+    79.57,
+    78.45,
+    77.32,
+    76.19,
+    75.06,
+    80.37,
+    85.69,
+    91.0,
+    96.31
+   ],
+   "S07": [
+    76.83,
+    75.51,
+    74.2,
+    72.88,
+    71.57,
+    70.25,
+    68.94,
+    67.62,
+    71.26,
+    76.82,
+    82.38,
+    87.94,
+    93.49
+   ],
+   "S08": [
+    53.74,
+    52.42,
+    51.11,
+    49.79,
+    48.48,
+    45.7,
+    44.38,
+    51.22,
+    58.06,
+    64.89,
+    71.73,
+    78.56,
+    85.4
+   ],
+   "S09": [
+    84.42,
+    83.29,
+    82.16,
+    81.04,
+    79.91,
+    78.78,
+    83.55,
+    88.31,
+    91.98,
+    96.74,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "S10": [
+    67.5,
+    65.92,
+    64.34,
+    62.76,
+    70.2,
+    77.64,
+    85.07,
+    92.51,
+    99.95,
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "S11": [
+    81.84,
+    80.71,
+    79.58,
+    85.44,
+    91.3,
+    97.16,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "S12": [
+    77.15,
+    76.02,
+    80.79,
+    85.55,
+    90.32,
+    95.08,
+    99.84,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "S13": [
+    69.11,
+    75.78,
+    82.45,
+    89.12,
+    95.79,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "S14": [
+    55.82,
+    60.96,
+    67.63,
+    74.3,
+    80.97,
+    87.64,
+    94.31,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    98.42
+   ],
+   "S15": [
+    77.32,
+    84.76,
+    92.19,
+    99.63,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    98.42,
+    96.84
+   ],
+   "S16": [
+    83.59,
+    89.79,
+    95.98,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    98.68,
+    97.37,
+    96.05,
+    94.74
+   ]
+  },
+  "temp_c": {
+   "S01": [
+    17.59,
+    18.82,
+    19.25,
+    19.61,
+    19.91,
+    20.17,
+    20.39,
+    20.58,
+    17.05,
+    14.06,
+    11.54,
+    9.4,
+    7.59
+   ],
+   "S02": [
+    20.96,
+    21.06,
+    21.14,
+    21.21,
+    21.27,
+    21.32,
+    21.36,
+    17.72,
+    14.63,
+    12.01,
+    9.8,
+    7.93,
+    6.34
+   ],
+   "S03": [
+    20.0,
+    20.25,
+    20.45,
+    20.63,
+    20.78,
+    20.9,
+    17.33,
+    14.3,
+    11.73,
+    9.57,
+    7.73,
+    6.79,
+    5.38
+   ],
+   "S04": [
+    12.87,
+    14.21,
+    15.34,
+    16.3,
+    17.12,
+    14.74,
+    12.1,
+    9.88,
+    7.99,
+    6.4,
+    5.05,
+    3.9,
+    7.54
+   ],
+   "S05": [
+    24.39,
+    23.96,
+    23.6,
+    19.61,
+    16.23,
+    13.37,
+    10.95,
+    8.9,
+    7.16,
+    5.7,
+    8.14,
+    10.2,
+    12.57
+   ],
+   "S06": [
+    23.49,
+    23.81,
+    19.79,
+    16.38,
+    13.5,
+    11.06,
+    8.99,
+    7.24,
+    5.76,
+    8.19,
+    10.25,
+    11.99,
+    13.47
+   ],
+   "S07": [
+    17.93,
+    14.81,
+    12.17,
+    9.93,
+    8.04,
+    6.44,
+    5.08,
+    3.93,
+    7.56,
+    9.72,
+    11.54,
+    13.09,
+    14.39
+   ],
+   "S08": [
+    21.31,
+    17.67,
+    14.59,
+    11.98,
+    9.77,
+    8.52,
+    6.84,
+    9.11,
+    11.03,
+    12.65,
+    14.02,
+    15.19,
+    16.17
+   ],
+   "S09": [
+    21.81,
+    18.09,
+    14.95,
+    12.28,
+    10.03,
+    8.12,
+    10.19,
+    11.94,
+    14.04,
+    15.2,
+    16.18,
+    17.01,
+    17.72
+   ],
+   "S10": [
+    20.71,
+    17.16,
+    14.16,
+    11.62,
+    13.15,
+    14.45,
+    15.54,
+    16.47,
+    17.26,
+    17.93,
+    18.49,
+    18.97,
+    19.37
+   ],
+   "S11": [
+    17.5,
+    14.44,
+    11.86,
+    13.35,
+    14.62,
+    15.69,
+    16.6,
+    17.37,
+    18.02,
+    18.57,
+    19.03,
+    19.43,
+    19.76
+   ],
+   "S12": [
+    13.59,
+    11.14,
+    12.74,
+    14.1,
+    15.25,
+    16.23,
+    17.05,
+    17.75,
+    18.34,
+    18.84,
+    19.26,
+    19.62,
+    19.93
+   ],
+   "S13": [
+    16.54,
+    17.32,
+    17.97,
+    18.53,
+    19.0,
+    19.4,
+    19.74,
+    20.02,
+    20.27,
+    20.47,
+    20.64,
+    20.79,
+    20.92
+   ],
+   "S14": [
+    14.4,
+    16.12,
+    16.96,
+    17.67,
+    18.28,
+    18.79,
+    19.22,
+    19.58,
+    19.89,
+    20.16,
+    20.38,
+    20.56,
+    17.04
+   ],
+   "S15": [
+    22.46,
+    22.33,
+    22.22,
+    22.12,
+    22.04,
+    21.97,
+    21.92,
+    21.87,
+    21.83,
+    21.79,
+    21.76,
+    18.05,
+    14.91
+   ],
+   "S16": [
+    15.49,
+    16.43,
+    17.22,
+    17.89,
+    18.46,
+    18.94,
+    19.35,
+    19.7,
+    19.99,
+    16.55,
+    13.64,
+    11.18,
+    9.1
+   ]
+  }
+ },
+ "last_step_rows": [
+  {
+   "satellite_id": "S01",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 0.0
+  },
+  {
+   "satellite_id": "S02",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 0.0
+  },
+  {
+   "satellite_id": "S03",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 0.0
+  },
+  {
+   "satellite_id": "S04",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 48.0,
+   "solar_w": 125.0
+  },
+  {
+   "satellite_id": "S05",
+   "requested": {
+    "action": "calibrate"
+   },
+   "executed": "calibrate",
+   "reason": "accepted",
+   "completed_job": null,
+   "load_w": 38.0,
+   "solar_w": 115.0
+  },
+  {
+   "satellite_id": "S06",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 115.0
+  },
+  {
+   "satellite_id": "S07",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 105.0
+  },
+  {
+   "satellite_id": "S08",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 125.0
+  },
+  {
+   "satellite_id": "S09",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 105.0
+  },
+  {
+   "satellite_id": "S10",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 115.0
+  },
+  {
+   "satellite_id": "S11",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 125.0
+  },
+  {
+   "satellite_id": "S12",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 105.0
+  },
+  {
+   "satellite_id": "S13",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 105.0
+  },
+  {
+   "satellite_id": "S14",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 0.0
+  },
+  {
+   "satellite_id": "S15",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 0.0
+  },
+  {
+   "satellite_id": "S16",
+   "requested": {
+    "action": "idle"
+   },
+   "executed": "idle",
+   "reason": "idle",
+   "completed_job": null,
+   "load_w": 18.0,
+   "solar_w": 0.0
+  }
+ ],
+ "model": {
+  "reserve_soc_pct": 30.0,
+  "critical_soc_pct": 20.0,
+  "payload_min_c": -5.0,
+  "payload_max_c": 45.0
+ },
+ "summary": {
+  "steps_executed": 12,
+  "jobs_total": 18,
+  "jobs_completed": 0,
+  "jobs_due": 5,
+  "jobs_due_missed": 5,
+  "critical_jobs_due": 0,
+  "critical_jobs_completed_on_time": 0,
+  "revenue_usd": 0,
+  "blocked_command_count": 0,
+  "below_reserve_satellite_steps": 0,
+  "brownout_satellite_steps": 0,
+  "critical_soc_satellite_steps": 0,
+  "minimum_soc_pct": 44.383275,
+  "terminal_soc_pct": {
+   "S01": 94.360902,
+   "S02": 90.526316,
+   "S03": 83.109749,
+   "S04": 93.096316,
+   "S05": 98.499549,
+   "S06": 96.309549,
+   "S07": 93.494474,
+   "S08": 85.399942,
+   "S09": 100.0,
+   "S10": 100.0,
+   "S11": 100.0,
+   "S12": 100.0,
+   "S13": 100.0,
+   "S14": 98.421053,
+   "S15": 96.842105,
+   "S16": 94.736842
+  },
+  "work_steps_in_missed_jobs": 0
+ }
+}
