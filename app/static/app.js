@@ -804,25 +804,32 @@ function renderFleetMatrix() {
     const isTempAlert = sat.temp_c < AppState.model.payload_min_c || sat.temp_c > AppState.model.payload_max_c;
     const isCalibUrgent = sat.calibration_age_steps >= ((sat.calibration_valid_steps || 48) - 6);
 
-    let pipColor = '#10b981';
+    let statusClass = 'fleet-card-healthy';
+    let statusLabel = 'В строю';
     let barClass = 'soc-normal';
+
     if (!sat.available || isBelowCrit) {
-      pipColor = '#ef4444';
+      statusClass = 'fleet-card-danger';
+      statusLabel = !sat.available ? 'Отказ' : 'Крит';
       barClass = 'soc-danger';
     } else if (isBelowReserve || isTempAlert || isCalibUrgent) {
-      pipColor = '#f59e0b';
+      statusClass = 'fleet-card-warning';
+      if (isBelowReserve) statusLabel = '<30%';
+      else if (isTempAlert) statusLabel = 'T°!';
+      else statusLabel = 'Калибр';
       barClass = 'soc-warning';
     }
 
     html += `
-      <div class="fleet-sat-card ${isBelowReserve || !sat.available ? 'card-alert' : ''}" onclick="openSatDetailModal('${sat.id}')" title="Кликните для телеметрии ${sat.id}">
+      <div class="fleet-sat-card ${statusClass}" onclick="openSatDetailModal('${sat.id}')" title="Кликните для детальной телеметрии ${sat.id}">
         <div class="fleet-card-top">
           <span class="fleet-card-id">${sat.id}</span>
-          <span class="fleet-card-pip" style="background-color: ${pipColor};"></span>
+          <span class="fleet-card-status-tag">${statusLabel}</span>
+          <span class="fleet-card-pip"></span>
         </div>
         <div class="fleet-card-metrics">
           <span>${Number(sat.soc_pct).toFixed(0)}%</span>
-          <span>${Number(sat.temp_c).toFixed(0)}°</span>
+          <span>${Number(sat.temp_c).toFixed(0)}°C</span>
         </div>
         <div class="fleet-card-bar-bg">
           <div class="fleet-card-bar-fill ${barClass}" style="width:${Math.min(100, Math.max(0, sat.soc_pct))}%;"></div>
@@ -952,10 +959,14 @@ function renderSatellitesTable() {
     if (isBelowCrit) socColorClass = 'soc-danger';
     else if (isBelowReserve) socColorClass = 'soc-warning';
 
+    let rowClass = 'row-healthy';
+    if (!sat.available || isBelowCrit) rowClass = 'row-danger';
+    else if (isBelowReserve || isTempAlert || isCalibUrgent) rowClass = 'row-warning';
+
     const isChecked = AppState.selectedSatellites.has(sat.id);
 
     html += `
-      <tr class="${isBelowReserve ? 'row-reserve-alert' : ''}">
+      <tr class="${rowClass}">
         <td>
           <input type="checkbox" class="sat-checkbox" data-sat-id="${sat.id}" ${isChecked ? 'checked' : ''} />
         </td>

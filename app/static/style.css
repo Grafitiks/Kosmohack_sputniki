@@ -1083,10 +1083,8 @@ body {
 }
 
 .fleet-sat-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm);
-  padding: 10px;
+  padding: 10px 12px;
   cursor: pointer;
   transition: all 0.25s var(--ease-out);
   display: flex;
@@ -1094,18 +1092,181 @@ body {
   gap: 6px;
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(16px);
 }
 
-.fleet-sat-card:hover {
-  background: rgba(216, 180, 254, 0.08);
-  border-color: rgba(216, 180, 254, 0.4);
+/* 1. Штатный режим: В СТРОЮ (Слабо-зелёная неоновая подсветка) */
+.fleet-sat-card.fleet-card-healthy {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 0 16px rgba(16, 185, 129, 0.04);
+}
+
+.fleet-sat-card.fleet-card-healthy:hover {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.65);
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 15px rgba(216, 180, 254, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 18px rgba(16, 185, 129, 0.25);
 }
 
+.fleet-sat-card.fleet-card-healthy .fleet-card-id {
+  color: #a7f3d0;
+}
+
+.fleet-sat-card.fleet-card-healthy .fleet-card-status-tag {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.fleet-sat-card.fleet-card-healthy .fleet-card-pip {
+  background-color: var(--emerald-live);
+  box-shadow: 0 0 8px var(--emerald-live);
+}
+
+/* 2. Предупреждение / Ниже 30% / Калибровка (Слабо-янтарная подсветка) */
+.fleet-sat-card.fleet-card-warning {
+  background: rgba(245, 158, 11, 0.07);
+  border: 1px solid rgba(245, 158, 11, 0.38);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 0 16px rgba(245, 158, 11, 0.05);
+}
+
+.fleet-sat-card.fleet-card-warning:hover {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.75);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.fleet-sat-card.fleet-card-warning .fleet-card-id {
+  color: #fde68a;
+}
+
+.fleet-sat-card.fleet-card-warning .fleet-card-status-tag {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.fleet-sat-card.fleet-card-warning .fleet-card-pip {
+  background-color: var(--alert-amber);
+  box-shadow: 0 0 8px var(--alert-amber);
+}
+
+/* 3. Отказ / Критический дефицит <20% (Слабо-красная подсветка) */
+.fleet-sat-card.fleet-card-danger,
 .fleet-sat-card.card-alert {
-  border-color: rgba(244, 63, 94, 0.5);
-  background: rgba(244, 63, 94, 0.06);
+  background: rgba(244, 63, 94, 0.09);
+  border: 1px solid rgba(244, 63, 94, 0.52);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 0 16px rgba(244, 63, 94, 0.07);
+}
+
+.fleet-sat-card.fleet-card-danger:hover,
+.fleet-sat-card.card-alert:hover {
+  background: rgba(244, 63, 94, 0.2);
+  border-color: rgba(244, 63, 94, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 22px rgba(244, 63, 94, 0.4);
+}
+
+.fleet-sat-card.fleet-card-danger .fleet-card-id,
+.fleet-sat-card.card-alert .fleet-card-id {
+  color: #fca5a5;
+}
+
+.fleet-sat-card.fleet-card-danger .fleet-card-status-tag,
+.fleet-sat-card.card-alert .fleet-card-status-tag {
+  color: #f87171;
+  background: rgba(244, 63, 94, 0.22);
+  border: 1px solid rgba(244, 63, 94, 0.45);
+}
+
+.fleet-sat-card.fleet-card-danger .fleet-card-pip,
+.fleet-sat-card.card-alert .fleet-card-pip {
+  background-color: var(--alert-red);
+  box-shadow: 0 0 10px var(--alert-red);
+  animation: pulse-danger 1.5s infinite;
+}
+
+@keyframes pulse-danger {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.6; }
+}
+
+/* Внутренние элементы карточки аппарата */
+.fleet-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.fleet-card-id {
+  font-family: var(--font-num);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+}
+
+.fleet-card-status-tag {
+  font-family: var(--font-hud);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  margin-left: auto;
+  margin-right: 4px;
+}
+
+.fleet-card-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.fleet-card-metrics {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.fleet-card-bar-bg {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.fleet-card-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.3s var(--ease-out);
+}
+
+/* Классы заполнения шкал заряда */
+.soc-normal {
+  background: var(--emerald-live);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.soc-warning {
+  background: var(--alert-amber);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.soc-danger {
+  background: var(--alert-red);
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
 }
 
 .sat-top-row {
@@ -1337,8 +1498,27 @@ body {
   background: rgba(216, 180, 254, 0.04);
 }
 
+.data-table tbody tr.row-healthy {
+  background: rgba(16, 185, 129, 0.02);
+}
+.data-table tbody tr.row-healthy:hover {
+  background: rgba(16, 185, 129, 0.08) !important;
+}
+
+.data-table tbody tr.row-warning {
+  background: rgba(245, 158, 11, 0.04);
+}
+.data-table tbody tr.row-warning:hover {
+  background: rgba(245, 158, 11, 0.1) !important;
+}
+
+.data-table tbody tr.row-danger,
 .data-table tbody tr.row-reserve-alert {
   background: rgba(244, 63, 94, 0.06);
+}
+.data-table tbody tr.row-danger:hover,
+.data-table tbody tr.row-reserve-alert:hover {
+  background: rgba(244, 63, 94, 0.14) !important;
 }
 
 .font-mono {
