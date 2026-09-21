@@ -2187,6 +2187,29 @@ function initSpaceCanvas() {
     mouse.targetY = -9999;
   });
 
+  // Поддержка касаний для мобильных устройств
+  window.addEventListener('touchstart', (e) => {
+    if (e.touches && e.touches.length > 0) {
+      mouse.targetX = e.touches[0].clientX;
+      mouse.targetY = e.touches[0].clientY;
+      mouse.active = true;
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchmove', (e) => {
+    if (e.touches && e.touches.length > 0) {
+      mouse.targetX = e.touches[0].clientX;
+      mouse.targetY = e.touches[0].clientY;
+      mouse.active = true;
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchend', () => {
+    mouse.active = false;
+    mouse.targetX = -9999;
+    mouse.targetY = -9999;
+  }, { passive: true });
+
   function resize() {
     width = window.innerWidth;
     height = window.innerHeight;
