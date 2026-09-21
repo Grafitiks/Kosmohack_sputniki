@@ -8,3 +8,10 @@ venv/
 .vscode/
 .DS_Store
 .pytest_cache/
+
+# Прогоны planner/run_compare.py — их много и они тяжёлые (P02-P04 — по
+# несколько мегабайт), а пересчитать заново — одна команда
+# (python3 planner/run_compare.py). В репозитории держим табличку и один
+# файл для примера формата, остальное не коммитим.
+results/P0*_*_*.json
+!results/P01_intro_smart_priority.json

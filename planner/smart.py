@@ -33,8 +33,12 @@ GOALS = ('priority', 'commercial')
 def _build_generation_cache(env) -> dict:
     """Строю один раз для текущего состояния env.s. Событие (add_jobs,
     outage, close_downlink) всегда пересоздаёт env.s целиком (так устроен
-    model/operations.py), так что id(env.s) — готовый признак "всё то же
-    самое или уже что-то поменялось".
+    model/operations.py), так что саму ссылку на env.s и держу как признак
+    "всё то же самое или уже что-то поменялось" — сравниваю через `is`, а
+    не id(). id() после сборки мусора может переиспользоваться на новый
+    объект, и тогда старый кэш ошибочно покажется свежим. Ссылка так не
+    подведёт: пока я её держу в кэше, старый объект не соберёт GC, и id()
+    у него точно не совпадёт с id() нового env.s.
     """
     n = env.s['time']['steps']
     sat_ids = list(env.sats)
@@ -68,7 +72,7 @@ def _build_generation_cache(env) -> dict:
         solar_prefix[sid] = prefix
 
     return {
-        'gen': id(env.s),
+        's': env.s,
         'reachable': reachable,
         'contact_steps': contact_steps,
         'solar_prefix': solar_prefix,
@@ -78,7 +82,7 @@ def _build_generation_cache(env) -> dict:
 
 def _get_cache(env) -> dict:
     cache = getattr(env, '_smart_cache', None)
-    if cache is None or cache['gen'] != id(env.s):
+    if cache is None or cache['s'] is not env.s:
         cache = _build_generation_cache(env)
         env._smart_cache = cache
     return cache
