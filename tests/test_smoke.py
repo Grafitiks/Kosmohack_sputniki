@@ -1,4 +1,3 @@
-"""Проверка, что комплект организаторов подключён и работает."""
 from pathlib import Path
 
 from model.operations import Session, replay_episode
