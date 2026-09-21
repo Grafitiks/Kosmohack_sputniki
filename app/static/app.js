@@ -60,7 +60,11 @@ const AppState = {
   tempChart: null,
   
   // Пользовательский загруженный сценарий
-  customScenarioJson: null
+  customScenarioJson: null,
+
+  // Автоматический ход смены (Play/Pause)
+  isAutoRunning: false,
+  autoPlayTimer: null
 };
 
 // Цветовая палитра спутников для графиков (профессиональные различимые цвета)
@@ -140,6 +144,7 @@ async function loadMockScenarios() {
  * Старт новой смены: POST /api/sessions
  */
 async function apiStartSession(scenarioId, goal, customJson = null, overrides = null) {
+  stopAutoPlay(false);
   showLoader('Создание новой смены...');
   hideAlert();
   
@@ -169,10 +174,10 @@ async function apiStartSession(scenarioId, goal, customJson = null, overrides = 
       hideLoader();
       return true;
     } catch (err) {
-      console.warn('Ошибка вызова POST /api/sessions, используем мок:', err);
+      console.warn('Ошибка вызова POST /api/sessions, используем автономный пример:', err);
       showAlert(`Бэкенд вернул ошибку (${err.message}). Загружен эталонный пример.`);
       AppState.isMockMode = true;
-      setConnectionStatus('mock', 'Демо-режим (app/mock)');
+      setConnectionStatus('mock', 'АВТОНОМНЫЙ РЕЖИМ');
     }
   }
 
@@ -282,6 +287,106 @@ async function apiRunUntil(targetStep) {
     simulateMockStep(delta);
     hideLoader();
   }, 400);
+}
+
+/**
+ * Обновление визуального состояния кнопки Пауза / Авто-ход / Продолжить
+ */
+function updatePlayPauseButton(state) {
+  const btn = document.getElementById('btnPause');
+  const icon = document.getElementById('btnPauseIcon');
+  const label = document.getElementById('btnPauseLabel');
+  if (!btn || !icon || !label) return;
+
+  btn.classList.remove('btn-danger-soft', 'btn-success-soft', 'btn-step');
+
+  if (state === 'running') {
+    icon.setAttribute('href', '#icon-pause');
+    label.textContent = 'Пауза';
+    btn.classList.add('btn-danger-soft');
+    btn.title = 'Приостановить автоматический ход смены';
+  } else if (state === 'paused') {
+    icon.setAttribute('href', '#icon-play');
+    label.textContent = 'Продолжить';
+    btn.classList.add('btn-success-soft');
+    btn.title = 'Возобновить автоматический ход смены';
+  } else {
+    icon.setAttribute('href', '#icon-play');
+    label.textContent = 'Авто-ход';
+    btn.classList.add('btn-step');
+    btn.title = 'Запустить непрерывный авто-ход смены';
+  }
+}
+
+/**
+ * Остановка автоматического хода смены
+ */
+function stopAutoPlay(asPause = true) {
+  if (AppState.autoPlayTimer) {
+    clearInterval(AppState.autoPlayTimer);
+    AppState.autoPlayTimer = null;
+  }
+  AppState.isAutoRunning = false;
+  hideLoader();
+
+  if (AppState.step >= AppState.totalSteps) {
+    updatePlayPauseButton('idle');
+    const label = document.getElementById('btnPauseLabel');
+    if (label) label.textContent = 'Смена завершена';
+  } else if (asPause && AppState.step > 0) {
+    updatePlayPauseButton('paused');
+  } else {
+    updatePlayPauseButton('idle');
+  }
+}
+
+/**
+ * Запуск непрерывного автоматического хода смены (Play)
+ */
+async function startAutoPlay() {
+  if (AppState.step >= AppState.totalSteps) {
+    showAlert('Смена уже завершена! Для повторного расчёта начните новую смену.');
+    return;
+  }
+
+  AppState.isAutoRunning = true;
+  updatePlayPauseButton('running');
+
+  if (AppState.autoPlayTimer) {
+    clearInterval(AppState.autoPlayTimer);
+  }
+
+  AppState.autoPlayTimer = setInterval(async () => {
+    if (!AppState.isAutoRunning) {
+      clearInterval(AppState.autoPlayTimer);
+      return;
+    }
+
+    if (AppState.step >= AppState.totalSteps) {
+      stopAutoPlay(false);
+      showAlert('Все шаги смены успешно выполнены!');
+      return;
+    }
+
+    await apiStep(1);
+
+    if (AppState.step >= AppState.totalSteps) {
+      stopAutoPlay(false);
+      showAlert('Все шаги смены успешно выполнены!');
+    }
+  }, 850);
+}
+
+/**
+ * Переключатель Play / Pause
+ */
+function togglePlayPause() {
+  if (AppState.isAutoRunning) {
+    stopAutoPlay(true);
+    showAlert('Автоматический ход смены приостановлен оператором.');
+  } else {
+    startAutoPlay();
+  }
 }
 
 /**
@@ -519,6 +624,9 @@ function applyState(state) {
   document.getElementById('btnDownloadResult').disabled = false;
 
   renderAll();
+  if (AppState.step >= AppState.totalSteps) {
+    stopAutoPlay(false);
+  }
 }
 
 /**
@@ -1448,12 +1556,13 @@ function setConnectionStatus(type, text) {
 }
 
 function showLoader(text = 'Выполняется расчёт...') {
+  if (AppState.isAutoRunning) return;
   const loader = document.getElementById('operationLoader');
   document.getElementById('loaderText').textContent = text;
   loader.classList.remove('hidden');
 
-  // Блокируем кнопки
-  document.querySelectorAll('.btn-step').forEach(b => b.disabled = true);
+  // Блокируем кнопки шага кроме кнопки Пауза
+  document.querySelectorAll('.btn-step:not(#btnPause)').forEach(b => b.disabled = true);
 }
 
 function hideLoader() {
@@ -1510,10 +1619,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Управление шагами
-  document.getElementById('btnStep1').addEventListener('click', () => apiStep(1));
-  document.getElementById('btnStep12').addEventListener('click', () => apiStep(12));
+  document.getElementById('btnStep1').addEventListener('click', () => {
+    if (AppState.isAutoRunning) stopAutoPlay(true);
+    apiStep(1);
+  });
+  document.getElementById('btnStep12').addEventListener('click', () => {
+    if (AppState.isAutoRunning) stopAutoPlay(true);
+    apiStep(12);
+  });
 
   document.getElementById('btnRunUntil').addEventListener('click', () => {
+    if (AppState.isAutoRunning) stopAutoPlay(true);
     const inputVal = parseInt(document.getElementById('inputUntilStep').value, 10);
     if (isNaN(inputVal) || inputVal <= 0) {
       showAlert('Введите корректный номер целевого шага');
@@ -1522,10 +1638,7 @@ document.addEventListener('DOMContentLoaded', () => {
     apiRunUntil(inputVal);
   });
 
-  document.getElementById('btnPause').addEventListener('click', () => {
-    hideLoader();
-    showAlert('Расчёт приостановлен оператором.');
-  });
+  document.getElementById('btnPause').addEventListener('click', togglePlayPause);
 
   // Смена цели управления
   document.getElementById('goalSelect').addEventListener('change', (e) => {
