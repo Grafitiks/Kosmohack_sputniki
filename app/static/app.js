@@ -858,22 +858,50 @@ function renderHeaderAndKPI() {
   const curTimeStr = formatMinutesToHHMM(currentMinutes);
   const totTimeStr = formatMinutesToHHMM(totalMinutes);
   
-  document.getElementById('kpiStep').textContent = `${AppState.step} / ${AppState.totalSteps}`;
+  document.getElementById('kpiStep').innerHTML = `${AppState.step} <span class="val-sub">/ ${AppState.totalSteps}</span>`;
   document.getElementById('kpiTime').textContent = `Время: ${curTimeStr} / ${totTimeStr}`;
 
-  // Выполнено заданий
+  // Выполнено заданий: показываем completed / totalJobs (а не due, чтобы не было дробей вроде 7/1)
+  const totalJobs = AppState.summary.jobs_total || (AppState.jobs ? AppState.jobs.length : 0);
   const completed = AppState.summary.jobs_completed || 0;
-  const due = AppState.summary.jobs_due || AppState.summary.jobs_total || AppState.jobs.length;
-  document.getElementById('kpiJobs').textContent = `${completed} / ${due}`;
-  document.getElementById('kpiJobsSub').textContent = `завершено из ${due} плановых`;
+  const jobsDue = AppState.summary.jobs_due || 0;
+  const jobsMissed = AppState.summary.jobs_due_missed || 0;
+  const completedEarly = Math.max(0, completed - (jobsDue - jobsMissed));
+
+  document.getElementById('kpiJobs').innerHTML = `${completed} <span class="val-sub">/ ${totalJobs}</span>`;
+  
+  const elJobsSub = document.getElementById('kpiJobsSub');
+  if (jobsMissed > 0) {
+    elJobsSub.innerHTML = `<span class="text-danger">Сорвано: ${jobsMissed}</span> · Срок наступил у ${jobsDue}`;
+  } else if (jobsDue === 0) {
+    elJobsSub.textContent = completed > 0 
+      ? `Досрочно: ${completed} (дедлайны ещё впереди)` 
+      : `ожидание начисления заданий`;
+  } else {
+    elJobsSub.textContent = `Дедлайн наступил у ${jobsDue} (досрочно: ${completedEarly})`;
+  }
 
   // Срочные задания (приоритет 3)
   const critDone = AppState.summary.critical_jobs_completed_on_time || 0;
   const critDue = AppState.summary.critical_jobs_due || 0;
-  document.getElementById('kpiCriticalJobs').textContent = `${critDone} / ${critDue}`;
-  document.getElementById('kpiCriticalSub').textContent = critDue > 0 
-    ? `срочные (выполнено ${Math.round((critDone / critDue) * 100)}%)`
-    : `нет срочных с наступившим сроком`;
+  const critTotal = AppState.jobs ? AppState.jobs.filter(j => j.priority === 3).length : 0;
+  const critFinishedTotal = AppState.jobs ? AppState.jobs.filter(j => j.priority === 3 && (j.completed_step !== null && j.completed_step !== undefined)).length : 0;
+  
+  const elCrit = document.getElementById('kpiCriticalJobs');
+  const elCritSub = document.getElementById('kpiCriticalSub');
+
+  if (critDue > 0) {
+    elCrit.innerHTML = `${critDone} <span class="val-sub">/ ${critDue}</span>`;
+    const critPct = Math.round((critDone / critDue) * 100);
+    elCritSub.textContent = critDone === critDue 
+      ? `100% в срок (закрыто ${critFinishedTotal} из ${critTotal})` 
+      : `в срок: ${critPct}% (закрыто ${critFinishedTotal} из ${critTotal})`;
+  } else {
+    elCrit.innerHTML = `${critFinishedTotal} <span class="val-sub">/ ${critTotal}</span>`;
+    elCritSub.textContent = critFinishedTotal > 0 
+      ? `досрочно: ${critFinishedTotal} из ${critTotal} (дедлайн позже)` 
+      : `нет срочных с наступившим сроком`;
+  }
 
   // Выручка
   const rev = AppState.summary.revenue_usd || 0;
