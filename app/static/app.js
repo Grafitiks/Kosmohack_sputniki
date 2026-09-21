@@ -859,7 +859,7 @@ function openSatDetailModal(satId) {
     renderSatellitesTable();
     renderCharts();
     modal.classList.add('hidden');
-    document.querySelector('.tab-btn[data-tab="tabCharts"]').click();
+    document.querySelector('.nav-tab[data-tab="tabCharts"]').click();
   };
 
   modal.classList.remove('hidden');
@@ -1392,10 +1392,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('alertClose').addEventListener('click', hideAlert);
 
   // Табы рабочей зоны
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  document.querySelectorAll('.nav-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(c => c.classList.remove('active'));
 
       btn.classList.add('active');
       const targetTab = document.getElementById(btn.dataset.tab);
@@ -1549,9 +1549,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Переключение режима формы (Интерактивный / Raw JSON)
-  document.querySelectorAll('.event-tab-btn').forEach(btn => {
+  document.querySelectorAll('.event-pill-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.event-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.event-pill-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       if (btn.dataset.eventMode === 'form') {
         document.getElementById('eventModeForm').classList.remove('hidden');
@@ -1578,7 +1578,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Отправка события
   document.getElementById('btnSubmitEvent').addEventListener('click', async () => {
     eventErrorBox.classList.add('hidden');
-    const isRaw = document.querySelector('.event-tab-btn.active').dataset.eventMode === 'raw';
+    const isRaw = document.querySelector('.event-pill-tab.active').dataset.eventMode === 'raw';
 
     let eventPayload = null;
 
