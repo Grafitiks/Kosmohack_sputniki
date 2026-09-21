@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ПУЛЬТ ЦУП · ОРБИТАЛЬНАЯ ГРУППИРОВКА | КосмоХакатон 2026</title>
+  
+  <!-- Футуристические шрифты (WebTactics Aero/Space style: Syncopate, Orbitron, Rajdhani) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Rajdhani:wght@500;600;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Chart.js для графиков (локальный бандл для 100% работы без интернета + fallback) -->
+  <script src="vendor/chart.umd.min.js"></script>
+  <script>if (typeof Chart === 'undefined') document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\\/script>');</script>
+</head>
+<body>
+
+  <!-- КИНЕМАТОГРАФИЧНЫЙ ФИЛЬМ-ГРЕЙН (WEBACTICS ATMOSPHERE GRAIN) -->
+  <div class="grain"></div>
+
+  <!-- ИНТЕРАКТИВНЫЙ ХОЛСТ ЗВЁЗДНОГО НЕБА И ОРБИТАЛЬНЫХ УЗЛОВ -->
+  <canvas id="space-canvas"></canvas>
+
+  <!-- БИБЛИОТЕКА ВЕКТОРНЫХ SVG-ИКОНОК -->
+  <svg style="display: none;">
+    <symbol id="icon-satellite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M13 7 9 3 5 7l4 4"></path>
+      <path d="m17 11 4 4-4 4-4-4"></path>
+      <path d="m8 12 4 4 6-6-4-4Z"></path>
+      <path d="m16 8 3-3"></path>
+      <path d="M9 21a6 6 0 0 0-6-6"></path>
+    </symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24" fill="currentColor">
+      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+    </symbol>
+    <symbol id="icon-fast-forward" viewBox="0 0 24 24" fill="currentColor">
+      <polygon points="13 19 22 12 13 5 13 19"></polygon>
+      <polygon points="2 19 11 12 2 5 2 19"></polygon>
+    </symbol>
+    <symbol id="icon-pause" viewBox="0 0 24 24" fill="currentColor">
+      <rect x="6" y="4" width="4" height="16"></rect>
+      <rect x="14" y="4" width="4" height="16"></rect>
+    </symbol>
+    <symbol id="icon-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+    </symbol>
+    <symbol id="icon-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path>
+      <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path>
+      <path d="M7 21h10"></path>
+      <path d="M12 3v18"></path>
+      <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path>
+    </symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+      <polyline points="7 10 12 15 17 10"></polyline>
+      <line x1="12" y1="15" x2="12" y2="3"></line>
+    </symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polyline points="12 6 12 12 16 14"></polyline>
+    </symbol>
+    <symbol id="icon-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </symbol>
+    <symbol id="icon-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+      <line x1="12" y1="9" x2="12" y2="13"></line>
+      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+    </symbol>
+    <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+    </symbol>
+    <symbol id="icon-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+    </symbol>
+  </svg>
+
+  <!-- ВЕРХНЯЯ НАВИГАЦИОННАЯ ПАНЕЛЬ -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg class="svg-icon"><use href="#icon-satellite"></use></svg>
+        </div>
+        <div class="brand-info">
+          <span class="mission-tag">КосмоХакатон 2026 · Центр управления полётами</span>
+          <h1 class="brand-title">ПУЛЬТ ОПЕРАТОРА ГРУППИРОВКИ</h1>
+        </div>
+      </div>
+
+      <div class="session-chip" id="sessionBadge">
+        <span class="chip-label">СЦЕНАРИЙ</span>
+        <span class="chip-value" id="currentScenarioTitle">P01_intro</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="status-indicator-badge" id="connectionStatusWrapper">
+        <span class="status-pip online" id="statusDot"></span>
+        <span class="status-label" id="statusText">Подключение к ядру ЦУП...</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="btn btn-primary" id="btnOpenNewSession">
+        <svg class="svg-btn-icon"><use href="#icon-zap"></use></svg>
+        <span>Новая смена</span>
+      </button>
+      <button class="btn btn-secondary" id="btnCompare" disabled>
+        <svg class="svg-btn-icon"><use href="#icon-scale"></use></svg>
+        <span>Сравнить варианты</span>
+      </button>
+      <button class="btn btn-outline" id="btnDownloadResult" disabled>
+        <svg class="svg-btn-icon"><use href="#icon-download"></use></svg>
+        <span>Экспорт</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- СТРОКА ОПЕРАТИВНОГО СТАТУСА РАСЧЁТА (SPINNER) -->
+  <div class="operation-bar hidden" id="operationLoader">
+    <div class="spinner-orbit"></div>
+    <span class="operation-text" id="loaderText">Выполняется планирование шага...</span>
+  </div>
+
+  <!-- БАННЕР ОШИБОК / ПРЕДУПРЕЖДЕНИЙ -->
+  <div class="alert-bar hidden" id="alertBanner">
+    <svg class="alert-svg"><use href="#icon-alert-triangle"></use></svg>
+    <span class="alert-text" id="alertMsg">Ошибка соединения</span>
+    <button class="alert-dismiss" id="alertClose">&times;</button>
+  </div>
+
+  <!-- ОСНОВНАЯ РАБОЧАЯ ОБЛАСТЬ -->
+  <main class="main-layout">
+
+    <!-- KPI ДАШБОРД ВЕРХНЕГО УРОВНЯ -->
+    <section class="kpi-grid">
+      <!-- Карточка 1: Шаг и время смены -->
+      <div class="kpi-panel">
+        <div class="panel-header">
+          <span class="panel-label">ТЕКУЩИЙ ШАГ СМЕНЫ</span>
+          <svg class="panel-icon"><use href="#icon-clock"></use></svg>
+        </div>
+        <div class="panel-value" id="kpiStep">12 <span class="val-sub">/ 48</span></div>
+        <div class="panel-footer" id="kpiTime">Время: 01:00 / 04:00</div>
+      </div>
+
+      <!-- Карточка 2: Выполнение заданий -->
+      <div class="kpi-panel">
+        <div class="panel-header">
+          <span class="panel-label">ВЫПОЛНЕНО ЗАДАНИЙ</span>
+          <svg class="panel-icon text-accent"><use href="#icon-check-circle"></use></svg>
+        </div>
+        <div class="panel-value text-accent" id="kpiJobs">0 <span class="val-sub">/ 5</span></div>
+        <div class="panel-footer" id="kpiJobsSub">завершено из 5 наступивших</div>
+        <div class="kpi-sub-line" id="kpiMissedLoss">Потери: 0 шагов в сорванных</div>
+      </div>
+
+      <!-- Карточка 3: Срочные задания приоритета 3 -->
+      <div class="kpi-panel priority-panel">
+        <div class="panel-header">
+          <span class="panel-label">СРОЧНЫЕ (ПРИОРИТЕТ 3) В СРОК</span>
+          <span class="badge-tag tag-p3">КРИТИЧЕСКИЕ</span>
+        </div>
+        <div class="panel-value text-success" id="kpiCriticalJobs">0 <span class="val-sub">/ 0</span></div>
+        <div class="panel-footer" id="kpiCriticalSub">приоритет 3 выполнен своевременно</div>
+        <div class="kpi-sub-line" id="kpiBlockedCount">Отклонено команд: 0</div>
+      </div>
+
+      <!-- Карточка 4: Выручка -->
+      <div class="kpi-panel">
+        <div class="panel-header">
+          <span class="panel-label">ВЫРУЧКА СМЕНЫ</span>
+          <span class="badge-tag tag-gold">USD</span>
+        </div>
+        <div class="panel-value text-gold" id="kpiRevenue">$0.00</div>
+        <div class="panel-footer">по полностью завершённым задачам</div>
+      </div>
+
+      <!-- Карточка 5: Безопасность питания -->
+      <div class="kpi-panel">
+        <div class="panel-header">
+          <span class="panel-label">МИНИМАЛЬНЫЙ ЗАРЯД (SOC)</span>
+          <svg class="panel-icon"><use href="#icon-shield"></use></svg>
+        </div>
+        <div class="panel-value" id="kpiMinSoc">44.4%</div>
+        <div class="panel-footer" id="kpiBelowReserve">Ниже резерва (30%): 0 шагов</div>
+        <div class="kpi-sub-line" id="kpiCriticalSocCount">Дефицит (&lt;20%): 0 шагов</div>
+      </div>
+
+      <!-- Карточка 6: Цель управления -->
+      <div class="kpi-panel goal-panel">
+        <div class="panel-header">
+          <span class="panel-label">СТРАТЕГИЯ ПЛАНИРОВАНИЯ</span>
+          <svg class="panel-icon"><use href="#icon-activity"></use></svg>
+        </div>
+        <div class="goal-control-wrapper">
+          <select id="goalSelect" class="select-goal">
+            <option value="priority">Приоритетное обслуживание (priority)</option>
+            <option value="revenue">Коммерческая отдача (revenue)</option>
+          </select>
+        </div>
+        <div class="panel-footer" id="goalNotice">Определяет выбор алгоритма на шаге</div>
+      </div>
+    </section>
+
+    <!-- ИНТЕРАКТИВНАЯ ВРЕМЕННАЯ ШКАЛА СМЕНЫ (TIMELINE SCRUBBER) -->
+    <section class="timeline-strip">
+      <div class="timeline-meta-bar">
+        <div class="timeline-title-group">
+          <svg class="timeline-svg"><use href="#icon-activity"></use></svg>
+          <span class="timeline-header-text">ВРЕМЕННАЯ ШКАЛА СМЕНЫ</span>
+        </div>
+        <div class="timeline-stats">
+          <span class="t-stat">Прогресс: <strong id="timelinePct">25.0%</strong></span>
+          <span class="t-stat">Прошло: <strong id="timelineElapsed">01:00:00</strong></span>
+          <span class="t-stat">Осталось: <strong id="timelineRemaining">03:00:00</strong></span>
+        </div>
+      </div>
+      <div class="timeline-track-container">
+        <div class="timeline-track-bg">
+          <div class="timeline-progress-fill" id="timelineProgressBar" style="width: 25%;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ПАНЕЛЬ ОПЕРАТИВНОГО УПРАВЛЕНИЯ (STEP PLAYBACK TOOLBAR) -->
+    <section class="action-toolbar">
+      <div class="toolbar-section">
+        <button class="btn btn-step" id="btnStep1" title="Продвинуться на один 5-минутный шаг">
+          <svg class="svg-btn-icon"><use href="#icon-play"></use></svg>
+          <span>Шаг (+5 мин)</span>
+        </button>
+
+        <button class="btn btn-step" id="btnStep12" title="Продвинуться на 12 шагов (1 час модельного времени)">
+          <svg class="svg-btn-icon"><use href="#icon-fast-forward"></use></svg>
+          <span>+12 шагов (1 ч)</span>
+        </button>
+
+        <div class="step-direct-box">
+          <span class="direct-label">До шага:</span>
+          <input type="number" id="inputUntilStep" min="1" max="288" placeholder="N" class="step-num-input" />
+          <button class="btn btn-step-go" id="btnRunUntil">Пуск</button>
+        </div>
+
+        <button class="btn btn-step" id="btnPause" title="Автоматический ход смены / Пауза">
+          <svg class="svg-btn-icon"><use id="btnPauseIcon" href="#icon-play"></use></svg>
+          <span id="btnPauseLabel">Авто-ход</span>
+        </button>
+      </div>
+
+      <div class="toolbar-section">
+        <button class="btn btn-event" id="btnOpenEventModal">
+          <svg class="svg-btn-icon"><use href="#icon-zap"></use></svg>
+          <span>Ввести оперативное событие</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ПРЕДИКТИВНЫЙ РАДАР РИСКОВ (EARLY WARNING RADAR - КРИТЕРИЙ О7) -->
+    <section class="risk-radar-panel" id="riskRadarPanel">
+      <div class="radar-header">
+        <div class="radar-title-group">
+          <span class="radar-pulse"></span>
+          <span class="radar-title">ПРЕДИКТИВНЫЙ МОНИТОРИНГ РИСКОВ (СППР · КРИТЕРИЙ О7)</span>
+        </div>
+        <span class="radar-summary-stats" id="radarSummaryStats">Все системы в штатном режиме</span>
+      </div>
+      <div class="radar-alerts-list" id="radarAlertsList">
+        <span class="radar-empty">✓ Параметры энергобаланса и калибровки в зеленой зоне</span>
+      </div>
+    </section>
+
+    <!-- МАТРИЦА АППАРАТОВ ГРУППИРОВКИ (FLEET STATUS MATRIX) -->
+    <section class="fleet-matrix-panel">
+      <div class="matrix-header">
+        <span class="matrix-title">СОСТОЯНИЕ БОРТОВЫХ СИСТЕМ (<span id="fleetHeaderCount">16</span> АППАРАТОВ)</span>
+        <span class="matrix-hint">Кликните по спутнику для детальной телеметрии</span>
+      </div>
+      <div class="fleet-grid" id="fleetGridContainer">
+        <!-- Генерируется динамически -->
+      </div>
+    </section>
+
+    <!-- РАБОЧИЕ ВКЛАДКИ -->
+    <section class="tabs-container">
+      <div class="tabs-nav">
+        <button class="nav-tab active" data-tab="tabSatellites">
+          <svg class="tab-icon"><use href="#icon-satellite"></use></svg>
+          <span>Аппараты и телеметрия (<span id="satCount">16</span>)</span>
+        </button>
+        <button class="nav-tab" data-tab="tabCharts">
+          <svg class="tab-icon"><use href="#icon-activity"></use></svg>
+          <span>Графики телеметрии (SOC и T°)</span>
+        </button>
+        <button class="nav-tab" data-tab="tabJobs">
+          <svg class="tab-icon"><use href="#icon-check-circle"></use></svg>
+          <span>Очередь заданий (<span id="jobCount">18</span>)</span>
+        </button>
+        <button class="nav-tab" data-tab="tabLastStep">
+          <svg class="tab-icon"><use href="#icon-clock"></use></svg>
+          <span>Журнал последнего шага</span>
+        </button>
+      </div>
+
+      <!-- ВКЛАДКА 1: СПУТНИКИ -->
+      <div class="tab-pane active" id="tabSatellites">
+        <div class="pane-toolbar">
+          <div class="search-wrapper">
+            <input type="text" id="searchSatellite" placeholder="Фильтр по ID аппарата..." class="search-input" />
+          </div>
+          <div class="selection-actions">
+            <span class="action-label">Отображение на графике:</span>
+            <button class="btn-pill" id="btnSelectAllSats">Все аппараты</button>
+            <button class="btn-pill" id="btnSelectFirst4Sats">Первые 4</button>
+            <button class="btn-pill" id="btnClearSatSelection">Сбросить</button>
+          </div>
+        </div>
+
+        <div class="table-frame">
+          <table class="data-table" id="satellitesTable">
+            <thead>
+              <tr>
+                <th width="44">Граф.</th>
+                <th>Бортовой номер</th>
+                <th>Уровень заряда (SOC)</th>
+                <th>Температура оборудования</th>
+                <th>Возраст калибровки</th>
+                <th>Ёмкость АКБ</th>
+                <th>Статус готовности</th>
+              </tr>
+            </thead>
+            <tbody id="satellitesTbody">
+              <tr><td colspan="7" class="table-empty">Загрузка данных телеметрии...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ВКЛАДКА 2: ГРАФИКИ ТЕЛЕМЕТРИИ -->
+      <div class="tab-pane" id="tabCharts">
+        <div class="pane-toolbar">
+          <span class="toolbar-desc">
+            Отображаются временные ряды для выбранных аппаратов. Пунктиром показаны допуски модели безопасности.
+          </span>
+          <div class="chart-options">
+            <label class="checkbox-label">
+              <input type="checkbox" id="chkShowReserveLines" checked />
+              <span>Показывать границы резерва и температур</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="charts-duo">
+          <div class="chart-box">
+            <div class="chart-top">
+              <div class="chart-title-group">
+                <h4>УРОВЕНЬ ЗАРЯДА БАТАРЕИ (SOC %)</h4>
+                <span class="chart-sub">Порог резерва: 30% | Критический минимум: 20%</span>
+              </div>
+            </div>
+            <div class="chart-canvas-box">
+              <canvas id="socChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-box">
+            <div class="chart-top">
+              <div class="chart-title-group">
+                <h4>ТЕМПЕРАТУРА ПОЛЕЗНОЙ НАГРУЗКИ (°C)</h4>
+                <span class="chart-sub">Допустимый рабочий диапазон: от 5°C до 45°C</span>
+              </div>
+            </div>
+            <div class="chart-canvas-box">
+              <canvas id="tempChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ВКЛАДКА 3: ЗАДАНИЯ -->
+      <div class="tab-pane" id="tabJobs">
+        <div class="pane-toolbar">
+          <div class="filters-row">
+            <div class="filter-box">
+              <label>Статус:</label>
+              <select id="filterJobStatus" class="control-select">
+                <option value="all">Все статусы</option>
+                <option value="active">Активные (active)</option>
+                <option value="waiting">В ожидании (waiting)</option>
+                <option value="done">Завершённые (done)</option>
+                <option value="missed">Просроченные (missed)</option>
+              </select>
+            </div>
+
+            <div class="filter-box">
+              <label>Приоритет:</label>
+              <select id="filterJobPriority" class="control-select">
+                <option value="all">Все приоритеты</option>
+                <option value="3">3 (Срочные!)</option>
+                <option value="2">2 (Обычные)</option>
+                <option value="1">1 (Фоновые)</option>
+              </select>
+            </div>
+
+            <div class="filter-box">
+              <label>Сортировка:</label>
+              <select id="sortJobBy" class="control-select">
+                <option value="deadline">По дедлайну (ближайшие)</option>
+                <option value="priority">По приоритету</option>
+                <option value="value">По стоимости ($)</option>
+                <option value="id">По ID задания</option>
+              </select>
+            </div>
+
+            <div class="search-wrapper">
+              <input type="text" id="searchJob" placeholder="Поиск по ID задачи..." class="search-input" />
+            </div>
+          </div>
+        </div>
+
+        <div class="table-frame">
+          <table class="data-table" id="jobsTable">
+            <thead>
+              <tr>
+                <th>ID задания</th>
+                <th>Тип</th>
+                <th>Приоритет</th>
+                <th>Выручка</th>
+                <th>Окно шагов</th>
+                <th>Прогресс работы</th>
+                <th>Допустимые аппараты</th>
+                <th>Статус</th>
+                <th>Анализ выполнения</th>
+              </tr>
+            </thead>
+            <tbody id="jobsTbody">
+              <tr><td colspan="9" class="table-empty">Загрузка очереди заданий...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ВКЛАДКА 4: ЖУРНАЛ ШАГА -->
+      <div class="tab-pane" id="tabLastStep">
+        <div class="pane-toolbar">
+          <span class="toolbar-desc">
+            Фактическое исполнение команд и физический баланс мощности на последнем завершённом шаге:
+          </span>
+        </div>
+
+        <div class="table-frame">
+          <table class="data-table" id="lastStepTable">
+            <thead>
+              <tr>
+                <th>Аппарат</th>
+                <th>Запрошенная операция</th>
+                <th>Исполнено</th>
+                <th>Решение планировщика / Причина</th>
+                <th>Потребление L (Вт)</th>
+                <th>Генерация S (Вт)</th>
+                <th>Завершённая задача</th>
+              </tr>
+            </thead>
+            <tbody id="lastStepTbody">
+              <tr><td colspan="7" class="table-empty">Шаги смены ещё не выполнялись</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- МОДАЛЬНОЕ ОКНО: НОВАЯ СМЕНА -->
+  <div class="modal-overlay hidden" id="modalNewSession">
+    <div class="modal-window">
+      <div class="window-header">
+        <h3>🚀 Инициализация новой смены</h3>
+        <button class="window-close" id="btnCloseSessionModal">&times;</button>
+      </div>
+
+      <div class="window-body">
+        <div class="form-field">
+          <label>Выберите сценарий из каталога:</label>
+          <select id="selectScenarioPreset" class="form-input">
+            <option value="">Загрузка списка сценариев...</option>
+          </select>
+          <div class="scenario-details-box" id="scenarioPresetDetails"></div>
+        </div>
+
+        <div class="or-separator"><span>ИЛИ ЗАГРУЗИТЕ СОБСТВЕННЫЙ JSON</span></div>
+
+        <div class="form-field">
+          <label>Пользовательский сценарий:</label>
+          <input type="file" id="fileScenarioInput" accept=".json" class="file-hidden-input" />
+          <div class="file-picker-box" onclick="document.getElementById('fileScenarioInput').click()">
+            <span id="fileScenarioName">Нажмите, чтобы выбрать .json файл</span>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>Цель управления сменой:</label>
+          <div class="goal-radio-group">
+            <label class="goal-radio-item">
+              <input type="radio" name="startGoal" value="priority" checked />
+              <div class="radio-desc">
+                <strong>Приоритетное обслуживание (priority)</strong>
+                <span>Максимизация своевременного выполнения задач высшего приоритета 3</span>
+              </div>
+            </label>
+            <label class="goal-radio-item">
+              <input type="radio" name="startGoal" value="revenue" />
+              <div class="radio-desc">
+                <strong>Коммерческая отдача (revenue)</strong>
+                <span>Максимизация совокупной выручки по завершённым заданиям</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- БЛОК НАСТРОЙКИ НАЧАЛЬНЫХ УСЛОВИЙ (OVERRIDES ПО ТЗ С. 3) -->
+        <div class="overrides-accordion">
+          <div class="overrides-header" id="toggleOverrides">
+            <label class="checkbox-label" onclick="event.stopPropagation()">
+              <input type="checkbox" id="chkEnableOverrides" />
+              <strong>Параметры эксперимента (Overrides по ТЗ с. 3)</strong>
+            </label>
+            <span class="accordion-hint">▼ Заряд, Солнце, Приоритеты</span>
+          </div>
+          <div class="overrides-body hidden" id="overridesBody">
+            <div class="field-grid grid-2">
+              <div class="form-field">
+                <label>Начальный заряд спутника (initial_soc_pct):</label>
+                <div class="input-inline">
+                  <input type="text" id="overrideSocSat" placeholder="S01" class="form-input font-mono" style="width:90px;" />
+                  <input type="number" id="overrideSocVal" placeholder="38.0" step="1" min="0" max="100" class="form-input font-mono" />
+                  <span class="unit-label">%</span>
+                </div>
+                <span class="input-hint">Пример: S01 = 38% (как в сценарии P03_energy)</span>
+              </div>
+
+              <div class="form-field">
+                <label>Множитель солнца (solar_factor):</label>
+                <div class="input-inline">
+                  <input type="number" id="overrideSolarFactor" placeholder="0.40" step="0.05" min="0" class="form-input font-mono" />
+                  <input type="text" id="overrideSolarSat" placeholder="Все (или S01)" class="form-input font-mono" style="width:130px;" />
+                </div>
+                <span class="input-hint">0.40 = снижение мощности до 40%</span>
+              </div>
+            </div>
+
+            <div class="field-grid grid-2">
+              <div class="form-field">
+                <label>Приоритет существующего задания:</label>
+                <div class="input-inline">
+                  <input type="text" id="overrideJobId" placeholder="JOB-0001" class="form-input font-mono" />
+                  <select id="overrideJobPriority" class="form-input" style="width:110px;">
+                    <option value="3">Пр. 3 (Срочное)</option>
+                    <option value="2">Пр. 2 (Обычное)</option>
+                    <option value="1">Пр. 1 (Фоновое)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label>Плановый отказ аппарата (outage):</label>
+                <div class="input-inline">
+                  <input type="text" id="overrideOutageSat" placeholder="S01" class="form-input font-mono" style="width:80px;" />
+                  <input type="number" id="overrideOutageStart" placeholder="0" class="form-input font-mono" style="width:65px;" />
+                  <span class="unit-label">..</span>
+                  <input type="number" id="overrideOutageEnd" placeholder="12" class="form-input font-mono" style="width:65px;" />
+                </div>
+                <span class="input-hint">Интервал [start..end) шагов</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="window-footer">
+        <button class="btn btn-outline" id="btnCancelSessionModal">Отмена</button>
+        <button class="btn btn-primary" id="btnConfirmStartSession">Начать смену</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: ВВОД СОБЫТИЯ -->
+  <div class="modal-overlay hidden" id="modalEvent">
+    <div class="modal-window modal-window-wide">
+      <div class="window-header">
+        <h3>⚡ Ввод оперативного события во время смены</h3>
+        <button class="window-close" id="btnCloseEventModal">&times;</button>
+      </div>
+
+      <div class="window-body">
+        <div class="event-type-tabs">
+          <button class="event-pill-tab active" data-event-mode="form">Интерактивный ввод</button>
+          <button class="event-pill-tab" data-event-mode="raw">Сырой JSON (экспертный режим)</button>
+        </div>
+
+        <!-- ПАНЕЛЬ БЫСТРЫХ ПРЕСЕТОВ ИЗ EVENTS_DEMO.JSON И ЗАГРУЗКА ФАЙЛА -->
+        <div class="event-preset-row">
+          <div style="flex:1; min-width:200px;">
+            <label style="font-size:11px; color:var(--text-tertiary); display:block; margin-bottom:4px;">Пресет из events_demo.json:</label>
+            <select id="selectEventPreset" class="form-input">
+              <option value="">-- Выбрать типовое событие --</option>
+              <option value="preset_e1">E-01 (Ш.72): Пакет 3 срочных заданий (URG-P-01..03)</option>
+              <option value="preset_e2">E-02 (Ш.74): Отказ спутников S08, S10 (до ш. 90)</option>
+              <option value="preset_e3">E-03 (Ш.144): Отмена связи Земли для всей группировки S01..S48</option>
+              <option value="preset_e4">E-04 (Ш.146): Срочный сброс данных URG-P-04 аппаратом S03</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:flex-end; gap:8px;">
+            <button type="button" class="btn btn-outline" id="btnAdaptEventToCurrentStep" title="Пересчитать шаги события относительно текущего шага смены">
+              Адаптировать под текущий шаг (Ш. <span id="currentStepBadgeInModal">0</span>)
+            </button>
+            <input type="file" id="fileEventInput" accept=".json" class="file-hidden-input" />
+            <button type="button" class="btn btn-outline" onclick="document.getElementById('fileEventInput').click()" title="Загрузить событие из файла JSON">
+              📁 Файл .json
+            </button>
+          </div>
+        </div>
+        <div id="eventFileNotice" class="file-name-hint" style="margin-bottom:8px; display:none;"></div>
+
+        <!-- РЕЖИМ 1: ФОРМА -->
+        <div class="event-view-content active" id="eventModeForm">
+          <div class="field-grid grid-2">
+            <div class="form-field">
+              <label>Тип события:</label>
+              <select id="eventTypeSelect" class="form-input">
+                <option value="satellite_outage">Отказ спутников (satellite_outage)</option>
+                <option value="close_downlink">Отмена сеансов передачи на Землю (close_downlink)</option>
+                <option value="add_jobs">Поступление новых заданий (add_jobs)</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Идентификатор события (id):</label>
+              <input type="text" id="eventIdInput" class="form-input" placeholder="E-01" />
+            </div>
+          </div>
+
+          <!-- ПОЛЯ ДЛЯ ОТКАЗОВ ИЛИ ОТМЕНЫ СВЯЗИ -->
+          <div id="fieldsOutageOrDownlink">
+            <div class="field-grid grid-2">
+              <div class="form-field">
+                <label>Затронутые аппараты:</label>
+                <input type="text" id="eventSatellitesInput" class="form-input font-mono" placeholder="S01, S02" />
+                <div class="quick-sat-chips" id="quickSatsContainer"></div>
+              </div>
+              <div class="form-field">
+                <label>Конец интервала (end_step):</label>
+                <input type="number" id="eventEndStepInput" class="form-input font-mono" placeholder="24" />
+                <span class="input-hint">Начало интервала: текущий шаг смены (at_step)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ПОЛЯ ДЛЯ ДОБАВЛЕНИЯ ЗАДАНИЯ -->
+          <div id="fieldsAddJob" class="hidden">
+            <div class="field-grid grid-3">
+              <div class="form-field">
+                <label>ID задания:</label>
+                <input type="text" id="newJobId" class="form-input" placeholder="JOB-NEW-1" />
+              </div>
+              <div class="form-field">
+                <label>Тип работы:</label>
+                <select id="newJobKind" class="form-input">
+                  <option value="downlink">downlink (передача на Землю)</option>
+                  <option value="relay">relay (ретрансляция)</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Приоритет:</label>
+                <select id="newJobPriority" class="form-input">
+                  <option value="3">3 (Срочное!)</option>
+                  <option value="2">2 (Обычное)</option>
+                  <option value="1">1 (Фоновое)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-grid grid-4">
+              <div class="form-field">
+                <label>Шаг старта:</label>
+                <input type="number" id="newJobRelease" class="form-input font-mono" />
+              </div>
+              <div class="form-field">
+                <label>Дедлайн (шаг):</label>
+                <input type="number" id="newJobDeadline" class="form-input font-mono" />
+              </div>
+              <div class="form-field">
+                <label>Длительность:</label>
+                <input type="number" id="newJobWorkSteps" class="form-input font-mono" value="2" />
+              </div>
+              <div class="form-field">
+                <label>Выручка ($):</label>
+                <input type="number" step="0.1" id="newJobValue" class="form-input font-mono" value="25.0" />
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Допустимые исполнители (satellite_ids):</label>
+              <input type="text" id="newJobSats" class="form-input font-mono" placeholder="S01, S04, S12" />
+            </div>
+          </div>
+        </div>
+
+        <!-- РЕЖИМ 2: СЫРОЙ JSON -->
+        <div class="event-view-content hidden" id="eventModeRaw">
+          <div class="form-field">
+            <label>JSON события (в формате cosmo-B-events-1.0):</label>
+            <textarea id="rawEventJson" class="form-input font-mono" rows="8"></textarea>
+          </div>
+        </div>
+
+        <div class="event-error-box hidden" id="eventErrorBox">
+          <span class="error-msg-text" id="eventErrorText"></span>
+        </div>
+      </div>
+
+      <div class="window-footer">
+        <button class="btn btn-outline" id="btnCancelEventModal">Отмена</button>
+        <button class="btn btn-primary" id="btnSubmitEvent">Применить событие</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: СРАВНЕНИЕ ВАРИАНТОВ -->
+  <div class="modal-overlay hidden" id="modalCompare">
+    <div class="modal-window modal-window-wide">
+      <div class="window-header">
+        <h3>⚖ Сравнение управленческих альтернатив</h3>
+        <button class="window-close" id="btnCloseCompareModal">&times;</button>
+      </div>
+
+      <div class="window-body">
+        <div class="compare-toolbar-row">
+          <div class="pick-strategy">
+            <label>Стратегия A:</label>
+            <select id="compareGoalA" class="form-input">
+              <option value="priority" selected>priority (Приоритет)</option>
+              <option value="revenue">revenue (Выручка)</option>
+            </select>
+          </div>
+          <span class="vs-divider">ПРОТИВ</span>
+          <div class="pick-strategy">
+            <label>Стратегия B:</label>
+            <select id="compareGoalB" class="form-input">
+              <option value="revenue" selected>revenue (Выручка)</option>
+              <option value="priority">priority (Приоритет)</option>
+            </select>
+          </div>
+          <button class="btn btn-secondary" id="btnRunCompareRequest">Рассчитать</button>
+        </div>
+
+        <div class="compare-columns-grid">
+          <!-- Колонка A -->
+          <div class="compare-side-panel side-a">
+            <div class="side-tag tag-a">ВАРИАНТ A (<span id="compNameA">priority</span>)</div>
+            <div class="metric-line">
+              <span>Выполнено заданий:</span>
+              <strong id="compA_jobsCompleted">--</strong>
+            </div>
+            <div class="metric-line">
+              <span>Срочные (Пр. 3) в срок:</span>
+              <strong class="text-success" id="compA_critJobs">--</strong>
+            </div>
+            <div class="metric-line">
+              <span>Выручка:</span>
+              <strong class="text-gold" id="compA_revenue">--</strong>
+            </div>
+            <div class="metric-line">
+              <span>Мин. заряд (SOC):</span>
+              <strong id="compA_minSoc">--</strong>
+            </div>
+            <div class="metric-line">
+              <span>Шагов ниже резерва:</span>
+              <strong id="compA_belowReserve">--</strong>
+            </div>
+            <div class="terminal-soc-list" id="compA_terminalSoc"></div>
+          </div>
+
+          <!-- Колонка B -->
+          <div class="compare-side-panel side-b">
+            <div class="side-tag tag-b">ВАРИАНТ B (<span id="compNameB">revenue</span>)</div>
+            <div class="metric-line">
+              <span>Выполнено заданий:</span>
+              <strong id="compB_jobsCompleted">--</strong>
+            </div>
+            <div class="metric-line">
+              <span>Срочные (Пр. 3) в срок:</span>
+              <strong class="text-success" id="compB_critJobs">--</strong>
+            </div>
+            <div class="metric-line">
+              <span>Выручка:</span>
+              <strong class="text-gold" id="compB_revenue">--</strong>
+            </div>
+            <div class="metric-line">
+              <span>Мин. заряд (SOC):</span>
+              <strong id="compB_minSoc">--</strong>
+            </div>
+            <div class="metric-line">
+              <span>Шагов ниже резерва:</span>
+              <strong id="compB_belowReserve">--</strong>
+            </div>
+            <div class="terminal-soc-list" id="compB_terminalSoc"></div>
+          </div>
+        </div>
+
+        <div class="verdict-banner" id="verdictBox">
+          <div class="verdict-heading">
+            <svg class="verdict-svg"><use href="#icon-shield"></use></svg>
+            <h5>ЗАКЛЮЧЕНИЕ ПЛАНИРОВЩИКА ДЛЯ ОПЕРАТОРА:</h5>
+          </div>
+          <p class="verdict-body" id="verdictText">Выберите варианты и нажмите «Рассчитать».</p>
+        </div>
+      </div>
+
+      <div class="window-footer">
+        <button class="btn btn-primary" id="btnCloseCompareModalBtn">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: ТЕЛЕМЕТРИЯ СПУТНИКА -->
+  <div class="modal-overlay hidden" id="modalSatDetail">
+    <div class="modal-window">
+      <div class="window-header">
+        <h3>🛰️ Телеметрический срез аппарата <span id="satDetailId" class="text-accent">S01</span></h3>
+        <button class="window-close" id="btnCloseSatDetailModal">&times;</button>
+      </div>
+      <div class="window-body" id="satDetailBody">
+        <!-- Заполняется динамически -->
+      </div>
+      <div class="window-footer">
+        <button class="btn btn-secondary" id="btnToggleChartForThisSat">Показать на графике</button>
+        <button class="btn btn-primary" id="btnCloseSatDetailModalBtn">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

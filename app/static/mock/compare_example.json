@@ -1,0 +1,34 @@
+{
+ "at_step": 12,
+ "a": {
+  "goal": "priority",
+  "summary": {
+   "jobs_completed": 5,
+   "critical_jobs_completed_on_time": 3,
+   "critical_jobs_due": 4,
+   "revenue_usd": 58.4,
+   "below_reserve_satellite_steps": 0,
+   "minimum_soc_pct": 41.2,
+   "terminal_soc_pct": {
+    "S01": 52.1,
+    "S02": 49.9
+   }
+  }
+ },
+ "b": {
+  "goal": "revenue",
+  "summary": {
+   "jobs_completed": 6,
+   "critical_jobs_completed_on_time": 2,
+   "critical_jobs_due": 4,
+   "revenue_usd": 71.2,
+   "below_reserve_satellite_steps": 2,
+   "minimum_soc_pct": 33.0,
+   "terminal_soc_pct": {
+    "S01": 44.0,
+    "S02": 41.5
+   }
+  }
+ },
+ "verdict": "Для цели priority лучше вариант A (больше срочных заданий в срок). Для revenue лучше B (выручка выше на 12.8)."
+}
