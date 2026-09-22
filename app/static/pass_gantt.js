@@ -106,7 +106,7 @@ class PassGantt {
         if (isCurrent && sat.last_action === 'job') {
           badgeHtml = '<div class="gantt-action-pip pip-job" title="Исполняется задание">✓</div>';
         } else if (isCurrent && sat.last_action === 'calibrate') {
-          badgeHtml = '<div class="gantt-action-pip pip-calib" title="Калибровка">🔧</div>';
+          badgeHtml = '<div class="gantt-action-pip pip-calib" title="Калибровка"></div>';
         }
 
         let contactPip = '';
@@ -114,7 +114,7 @@ class PassGantt {
         if (isRelay) contactPip += '<span class="contact-pip-relay" title="Окно межспутниковой связи (Relay)"></span>';
 
         html += `
-          <div class="gantt-cell ${cellClass}" title="${sat.id} · шаг ${t} (${formatMinutesToHHMM(t * 5)})\n${isSunlight ? '☀️ Освещен (125 Вт)' : '🌑 Тень Земли (0 Вт)'}${isDownlink ? '\n📡 Окно связи Downlink' : ''}${isRelay ? '\n🟣 Окно Relay' : ''}">
+          <div class="gantt-cell ${cellClass}" title="${sat.id} · шаг ${t} (${formatMinutesToHHMM(t * 5)})\n${isSunlight ? 'Освещен (125 Вт)' : 'Тень Земли (0 Вт)'}${isDownlink ? '\nОкно связи Downlink' : ''}${isRelay ? '\nОкно Relay' : ''}">
             ${contactPip}
             ${badgeHtml}
           </div>

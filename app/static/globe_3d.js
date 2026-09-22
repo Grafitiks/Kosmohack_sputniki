@@ -300,8 +300,8 @@ class Globe3D {
     this.earthSpinGroup.add(this.groundStationsGroup);
 
     const stations = [
-      { id: 'GS-01', name: 'ППИ-1 (Дубна)', shortName: '📡 ППИ-1 Дубна', lat: 56.7, lon: 37.2, color: 0x38bdf8 },
-      { id: 'GS-02', name: 'ППИ-2 (Восточный)', shortName: '📡 ППИ-2 Восточный', lat: 51.8, lon: 128.3, color: 0x10b981 }
+      { id: 'GS-01', name: 'ППИ-1 (Дубна)', shortName: 'ППИ-1 Дубна', lat: 56.7, lon: 37.2, color: 0x38bdf8 },
+      { id: 'GS-02', name: 'ППИ-2 (Восточный)', shortName: 'ППИ-2 Восточный', lat: 51.8, lon: 128.3, color: 0x10b981 }
     ];
 
     stations.forEach(gs => {

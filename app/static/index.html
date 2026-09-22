@@ -221,8 +221,8 @@
         </div>
         <div class="goal-control-wrapper" style="display:flex; flex-direction:column; gap:6px;">
           <select id="algorithmSelect" class="select-goal" title="Ядро планирования действий аппаратов">
-            <option value="smart" selected>🧠 Smart (Lookahead + SOC)</option>
-            <option value="baseline">⚙️ Baseline (Жадный отбор)</option>
+            <option value="smart" selected>Smart (Lookahead + SOC)</option>
+            <option value="baseline">Baseline (Жадный отбор)</option>
           </select>
           <select id="goalSelect" class="select-goal" title="Критерий оптимизации смены">
             <option value="priority">Приоритет задач (priority)</option>
@@ -281,11 +281,11 @@
       <div class="toolbar-section">
         <button class="btn btn-secondary btn-step" id="btnToolbarExplain" disabled title="Аудит решений и причин срыва заданий (Explain Engine)">
           <svg class="svg-btn-icon"><use href="#icon-shield"></use></svg>
-          <span>🔍 Explain</span>
+          <span>Explain</span>
         </button>
         <button class="btn btn-secondary btn-step" id="btnToolbarStats" disabled title="Статистика утилизации ресурсов флота (Stats)">
           <svg class="svg-btn-icon"><use href="#icon-activity"></use></svg>
-          <span>📊 Stats</span>
+          <span>Stats</span>
         </button>
         <button class="btn btn-event" id="btnOpenEventModal">
           <svg class="svg-btn-icon"><use href="#icon-zap"></use></svg>
@@ -374,16 +374,16 @@
                 <span>ОРБИТАЛЬНАЯ ГРУППИРОВКА: <strong style="color:#38bdf8;">16 АППАРАТОВ В ПОЛЁТЕ</strong> (4 ПЛОСКОСТИ × 4)</span>
               </div>
               <div style="background:rgba(5,10,24,0.78); border:1px solid rgba(255,255,255,0.1); border-radius:4px; padding:4px 10px; color:#94a3b8; font-size:10px;">
-                📡 НАЗЕМНЫЙ КОМПЛЕКС: 2 ПУНКТА ПРИЕМА (ДУБНА / ВОСТОЧНЫЙ)
+                НАЗЕМНЫЙ КОМПЛЕКС: 2 ПУНКТА ПРИЕМА (ДУБНА / ВОСТОЧНЫЙ)
               </div>
             </div>
 
             <!-- Плавающие 3D контролы -->
             <div class="globe-overlay-controls" style="position:absolute; bottom:14px; left:14px; z-index:20; display:flex; gap:8px; pointer-events:auto;">
               <button class="btn btn-xs btn-secondary" id="btnGlobeFlightToggle" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(6px); border:1px solid rgba(16,185,129,0.4); color:#10b981; font-family:'JetBrains Mono',monospace;">▶️ Полёт: 60 FPS</button>
-              <button class="btn btn-xs btn-secondary" id="btnGlobeSpeedToggle" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.15); color:var(--text-secondary); font-family:'JetBrains Mono',monospace;">⚡ 1x Скорость</button>
-              <button class="btn btn-xs btn-secondary" id="btnGlobeAutoRotate" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(6px); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; font-family:'JetBrains Mono',monospace;">🔄 Авто-Земля</button>
-              <button class="btn btn-xs btn-secondary" id="btnGlobeResetView" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.15); color:var(--text-secondary); font-family:'JetBrains Mono',monospace;">🎯 Сброс вида</button>
+              <button class="btn btn-xs btn-secondary" id="btnGlobeSpeedToggle" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.15); color:var(--text-secondary); font-family:'JetBrains Mono',monospace;">1x Скорость</button>
+              <button class="btn btn-xs btn-secondary" id="btnGlobeAutoRotate" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(6px); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; font-family:'JetBrains Mono',monospace;">Авто-Земля</button>
+              <button class="btn btn-xs btn-secondary" id="btnGlobeResetView" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.15); color:var(--text-secondary); font-family:'JetBrains Mono',monospace;">Сброс вида</button>
             </div>
             <div class="globe-hud-tip" style="position:absolute; bottom:14px; right:14px; z-index:20; font-size:11px; color:var(--text-tertiary); font-family:'JetBrains Mono',monospace; background:rgba(15,23,42,0.7); padding:4px 8px; border-radius:4px; pointer-events:none;">
               ЛКМ: Вращение · Колесо: Зум · Клик по аппарату: Авионика
@@ -600,7 +600,7 @@
   <div class="modal-overlay hidden" id="modalNewSession">
     <div class="modal-window">
       <div class="window-header">
-        <h3>🚀 Инициализация новой смены</h3>
+        <h3>Инициализация новой смены</h3>
         <button class="window-close" id="btnCloseSessionModal">&times;</button>
       </div>
 
@@ -629,14 +629,14 @@
             <label class="goal-radio-item">
               <input type="radio" name="startAlgorithm" value="smart" checked />
               <div class="radio-desc">
-                <strong>🧠 Умный Lookahead (smart) — Рекомендуется</strong>
+                <strong>Умный Lookahead (smart) — Рекомендуется</strong>
                 <span>Прогнозирование окон связи, упреждающая зарядка АКБ (>30%) и терморежим</span>
               </div>
             </label>
             <label class="goal-radio-item">
               <input type="radio" name="startAlgorithm" value="baseline" />
               <div class="radio-desc">
-                <strong>⚙️ Базовый жадный (baseline)</strong>
+                <strong>Базовый жадный (baseline)</strong>
                 <span>Простое правило (дедлайн, приоритет, стоимость) без упреждающего анализа</span>
               </div>
             </label>
@@ -733,7 +733,7 @@
   <div class="modal-overlay hidden" id="modalEvent">
     <div class="modal-window modal-window-wide">
       <div class="window-header">
-        <h3>⚡ Ввод оперативного события во время смены</h3>
+        <h3>Ввод оперативного события во время смены</h3>
         <button class="window-close" id="btnCloseEventModal">&times;</button>
       </div>
 
@@ -761,7 +761,7 @@
             </button>
             <input type="file" id="fileEventInput" accept=".json" class="file-hidden-input" />
             <button type="button" class="btn btn-outline" onclick="document.getElementById('fileEventInput').click()" title="Загрузить событие из файла JSON">
-              📁 Файл .json
+              Файл .json
             </button>
           </div>
         </div>
@@ -874,7 +874,7 @@
   <div class="modal-overlay hidden" id="modalCompare">
     <div class="modal-window modal-window-wide">
       <div class="window-header">
-        <h3>⚖ Сравнение управленческих альтернатив</h3>
+        <h3>Сравнение управленческих альтернатив</h3>
         <button class="window-close" id="btnCloseCompareModal">&times;</button>
       </div>
 
@@ -979,7 +979,7 @@
   <div class="modal-overlay hidden" id="modalSatDetail">
     <div class="modal-window">
       <div class="window-header">
-        <h3>🛰️ Телеметрический срез аппарата <span id="satDetailId" class="text-accent">S01</span></h3>
+        <h3>Телеметрический срез аппарата <span id="satDetailId" class="text-accent">S01</span></h3>
         <button class="window-close" id="btnCloseSatDetailModal">&times;</button>
       </div>
       <div class="window-body" id="satDetailBody">

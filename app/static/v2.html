@@ -236,7 +236,7 @@
     <!-- ГЛАВНЫЙ БАННЕР ЗАЩИТЫ (HERO) -->
     <section class="v2-hero">
       <div class="v2-hero-title">
-        <span>🚀 СИСТЕМА АВТОНОМНОГО УПРАВЛЕНИЯ СПУТНИКОВОЙ ГРУППИРОВКОЙ</span>
+        <span>СИСТЕМА АВТОНОМНОГО УПРАВЛЕНИЯ СПУТНИКОВОЙ ГРУППИРОВКОЙ</span>
       </div>
       <p class="v2-hero-subtitle">
         Специализированная панель демонстрации для экспертной комиссии КосмоХакатона 2026. 
@@ -286,7 +286,7 @@
           <div class="v2-compare-col-header">
             <div>
               <span class="badge badge-info" style="font-size:11px;">ВАРИАНТ A</span>
-              <strong style="font-size:14px; color:#fff; margin-left:6px;" id="v2ColTitleA">🧠 Smart Lookahead</strong>
+              <strong style="font-size:14px; color:#fff; margin-left:6px;" id="v2ColTitleA">Smart Lookahead</strong>
             </div>
             <span class="audit-badge audit-badge-success">Рекомендуется</span>
           </div>
@@ -320,7 +320,7 @@
           <div class="v2-compare-col-header">
             <div>
               <span class="badge badge-muted" style="font-size:11px;">ВАРИАНТ B</span>
-              <strong style="font-size:14px; color:#fff; margin-left:6px;" id="v2ColTitleB">⚙️ Baseline (Жадный)</strong>
+              <strong style="font-size:14px; color:#fff; margin-left:6px;" id="v2ColTitleB">Baseline (Жадный)</strong>
             </div>
             <span class="audit-badge audit-badge-warn">Базовый уровень</span>
           </div>
@@ -563,8 +563,8 @@
       const sumA = a.summary || {};
       const sumB = b.summary || {};
 
-      document.getElementById('v2ColTitleA').textContent = `🧠 Smart Lookahead (${a.goal || goal})`;
-      document.getElementById('v2ColTitleB').textContent = `⚙️ Baseline Greedy (${b.goal || goal})`;
+      document.getElementById('v2ColTitleA').textContent = `Smart Lookahead (${a.goal || goal})`;
+      document.getElementById('v2ColTitleB').textContent = `Baseline Greedy (${b.goal || goal})`;
 
       const jobsA = sumA.jobs_completed !== undefined ? sumA.jobs_completed : 0;
       const jobsB = sumB.jobs_completed !== undefined ? sumB.jobs_completed : 0;

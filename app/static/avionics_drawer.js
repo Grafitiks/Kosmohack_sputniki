@@ -125,11 +125,11 @@ function renderAvionicsDrawer(satId) {
     elPowerFlux.innerHTML = `
       <div class="hud-power-grid">
         <div class="power-box ${isSun ? 'sun' : 'eclipse'}">
-          <span class="power-lbl">${isSun ? '☀️ СОЛНЕЧНЫЕ БАТАРЕИ' : '🌑 ТЕНЬ ЗЕМЛИ'}</span>
+          <span class="power-lbl">${isSun ? 'СОЛНЕЧНЫЕ БАТАРЕИ' : 'ТЕНЬ ЗЕМЛИ'}</span>
           <strong class="power-val font-mono">${solarGenW.toFixed(0)} Вт</strong>
         </div>
         <div class="power-box load">
-          <span class="power-lbl">⚡ СУММАРНАЯ НАГРУЗКА</span>
+          <span class="power-lbl">СУММАРНАЯ НАГРУЗКА</span>
           <strong class="power-val font-mono">${totalLoadW.toFixed(0)} Вт</strong>
         </div>
       </div>

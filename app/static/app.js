@@ -532,7 +532,7 @@ async function apiSetAlgorithm(newAlg) {
       const state = await res.json();
       applyState(state);
       hideLoader();
-      showAlert(`Алгоритм смены переключен на: ${newAlg === 'smart' ? '🧠 Smart Lookahead' : '⚙️ Baseline'}`);
+      showAlert(`Алгоритм смены переключен на: ${newAlg === 'smart' ? 'Smart Lookahead' : 'Baseline'}`);
       return;
     } catch (err) {
       showAlert(`Не удалось изменить алгоритм: ${err.message}`);
@@ -830,12 +830,12 @@ function renderRiskRadar() {
     if (remaining <= 0) {
       alerts.push({
         type: 'danger',
-        text: `🔧 <strong>${sat.id}</strong>: калибровка ИСТЕКЛА! Задания заблокированы`
+        text: `<strong>${sat.id}</strong>: калибровка ИСТЕКЛА! Задания заблокированы`
       });
     } else if (remaining <= 5) {
       alerts.push({
         type: 'warn',
-        text: `🔧 <strong>${sat.id}</strong>: калибровка истекает через ${remaining} ш.`
+        text: `<strong>${sat.id}</strong>: калибровка истекает через ${remaining} ш.`
       });
     }
   });
@@ -845,17 +845,17 @@ function renderRiskRadar() {
     if (!sat.available) {
       alerts.push({
         type: 'danger',
-        text: `🛑 <strong>${sat.id}</strong>: аппарат выведен из строя (outage)`
+        text: `<strong>${sat.id}</strong>: аппарат выведен из строя (outage)`
       });
     } else if (sat.soc_pct < AppState.model.critical_soc_pct) {
       alerts.push({
         type: 'danger',
-        text: `🚨 <strong>${sat.id}</strong>: критический дефицит ${Number(sat.soc_pct).toFixed(1)}% (&lt;20%)!`
+        text: `<strong>${sat.id}</strong>: критический дефицит ${Number(sat.soc_pct).toFixed(1)}% (&lt;20%)!`
       });
     } else if (sat.soc_pct < AppState.model.reserve_soc_pct + 5.0) {
       alerts.push({
         type: 'warn',
-        text: `⚡ <strong>${sat.id}</strong>: заряд ${Number(sat.soc_pct).toFixed(1)}% близок к резерву (30%)`
+        text: `<strong>${sat.id}</strong>: заряд ${Number(sat.soc_pct).toFixed(1)}% близок к резерву (30%)`
       });
     }
   });
@@ -992,8 +992,8 @@ function renderHeaderAndKPI() {
   const goalNotice = document.getElementById('goalNotice');
   if (goalNotice) {
     goalNotice.textContent = AppState.algorithm === 'smart' 
-      ? '🧠 Smart Lookahead: прогнозирование окон и баланс SOC' 
-      : '⚙️ Baseline: жадная эвристика без упреждения';
+      ? 'Smart Lookahead: прогнозирование окон и баланс SOC' 
+      : 'Baseline: жадная эвристика без упреждения';
   }
 
   // Шаг и время (1 шаг = 5 мин)
@@ -1367,7 +1367,7 @@ function renderJobsTable() {
           <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
             <span>${comment}</span>
             <button class="btn-job-explain" data-job-id="${job.id}" title="Аудит решений планировщика по ${job.id}">
-              🔍 Аудит
+              Аудит
             </button>
           </div>
         </td>
@@ -1382,10 +1382,10 @@ const REASON_TRANSLATIONS = {
   'accepted': { label: '✓ Принято', class: 'badge-success', hint: 'Команда успешно принята и исполняется' },
   'idle': { label: 'Ожидание', class: 'badge-muted', hint: 'Штатное ожидание' },
   'energy_reserve': { label: '⚠️ Ниже резерва 30%', class: 'badge-danger', hint: 'Отказ: энергия опустится ниже резерва 30%' },
-  'thermal_limit': { label: '🌡️ Температурный предел', class: 'badge-danger', hint: 'Отказ: температура оборудования выходит за пределы 5..45°C' },
-  'calibration_required': { label: '🔧 Нужна калибровка', class: 'badge-warning', hint: 'Отказ: калибровка устарела (>= 48 шагов)' },
-  'no_contact': { label: '📡 Нет связи', class: 'badge-warning', hint: 'Отказ: связь со станцией или ретрансляция недоступна на шаге' },
-  'ground_capacity': { label: '🛑 Лимит наземной связи', class: 'badge-danger', hint: 'Отказ: максимум 2 одновременных downlink на группировку' },
+  'thermal_limit': { label: 'Температурный предел', class: 'badge-danger', hint: 'Отказ: температура оборудования выходит за пределы 5..45°C' },
+  'calibration_required': { label: 'Нужна калибровка', class: 'badge-warning', hint: 'Отказ: калибровка устарела (>= 48 шагов)' },
+  'no_contact': { label: 'Нет связи', class: 'badge-warning', hint: 'Отказ: связь со станцией или ретрансляция недоступна на шаге' },
+  'ground_capacity': { label: 'Лимит наземной связи', class: 'badge-danger', hint: 'Отказ: максимум 2 одновременных downlink на группировку' },
   'duplicate_job_in_step': { label: 'Конфликт назначения', class: 'badge-danger', hint: 'Отказ: над одним заданием не могут работать два аппарата сразу' },
   'satellite_unavailable': { label: 'Аппарат недоступен', class: 'badge-danger', hint: 'Отказ: спутник на техобслуживании или в отказе (outage)' },
   'outside_job_window': { label: 'Вне окна задачи', class: 'badge-danger', hint: 'Отказ: текущий шаг вне интервала выполнения задания' },
@@ -1652,8 +1652,8 @@ function renderCompareModal(compData) {
   const sumA = a.summary || {};
   const sumB = b.summary || {};
 
-  const algLabelA = a.algorithm ? (a.algorithm === 'smart' ? '🧠 Smart' : '⚙️ Baseline') : '';
-  const algLabelB = b.algorithm ? (b.algorithm === 'smart' ? '🧠 Smart' : '⚙️ Baseline') : '';
+  const algLabelA = a.algorithm ? (a.algorithm === 'smart' ? 'Smart' : 'Baseline') : '';
+  const algLabelB = b.algorithm ? (b.algorithm === 'smart' ? 'Smart' : 'Baseline') : '';
   document.getElementById('compNameA').textContent = algLabelA ? `${algLabelA} (${a.goal || 'priority'})` : (a.goal || 'A');
   document.getElementById('compNameB').textContent = algLabelB ? `${algLabelB} (${b.goal || 'revenue'})` : (b.goal || 'B');
 
@@ -2129,7 +2129,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let speedIdx = 0;
     const speeds = [1, 2.5, 5];
-    const speedLabels = ['⚡ 1x Скорость', '⚡ 2.5x Скорость', '⚡ 5x Скорость'];
+    const speedLabels = ['1x Скорость', '2.5x Скорость', '5x Скорость'];
     const btnSpeed = document.getElementById('btnGlobeSpeedToggle');
     btnSpeed?.addEventListener('click', () => {
       speedIdx = (speedIdx + 1) % speeds.length;
@@ -2510,9 +2510,9 @@ document.addEventListener('DOMContentLoaded', () => {
           let targetEvent = parsed;
           if (parsed.events && Array.isArray(parsed.events)) {
             targetEvent = parsed.events.find(ev => ev.at_step === AppState.step) || parsed.events[0];
-            if (noticeEl) noticeEl.textContent = `📁 Пакет ${file.name} (${parsed.events.length} событий). Выбрано: ${targetEvent.id} (Ш.${targetEvent.at_step}, ${targetEvent.type})`;
+            if (noticeEl) noticeEl.textContent = `Пакет ${file.name} (${parsed.events.length} событий). Выбрано: ${targetEvent.id} (Ш.${targetEvent.at_step}, ${targetEvent.type})`;
           } else {
-            if (noticeEl) noticeEl.textContent = `📁 Загружено одиночное событие ${targetEvent.id || file.name}`;
+            if (noticeEl) noticeEl.textContent = `Загружено одиночное событие ${targetEvent.id || file.name}`;
           }
           loadEventIntoForm(targetEvent);
         } catch (err) {
