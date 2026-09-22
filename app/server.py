@@ -684,6 +684,17 @@ try:
 except OSError:
     pass
 
+@app.get('/')
+def get_index_page():
+    # На новых версиях starlette StaticFiles(html=True) почему-то
+    # перестал сам отдавать index.html на корневой '/' (баг словили при
+    # финальной проверке перед сдачей) — отдаём его явным роутом, как /v2.
+    index_file = STATIC_DIR / 'index.html'
+    if index_file.is_file():
+        return FileResponse(index_file)
+    return JSONResponse(status_code=404, content={'error': 'index.html не найден'})
+
+
 @app.get('/v2')
 def get_v2_page():
     v2_file = STATIC_DIR / 'v2.html'
