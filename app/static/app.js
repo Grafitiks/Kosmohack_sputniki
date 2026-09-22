@@ -793,6 +793,20 @@ function renderAll() {
   renderJobsTable();
   renderLastStepTable();
   renderCharts();
+
+  // Обновление аэрокосмических модулей ЦУП
+  if (window.orbitalMapInstance) {
+    window.orbitalMapInstance.render();
+  }
+  if (window.passGanttInstance) {
+    window.passGanttInstance.render();
+  }
+  if (window.flightLogInstance) {
+    window.flightLogInstance.recordStepEvents();
+  }
+  if (window.currentAvionicsSatId && typeof window.renderAvionicsDrawer === 'function') {
+    window.renderAvionicsDrawer(window.currentAvionicsSatId);
+  }
 }
 
 /**
@@ -936,7 +950,7 @@ function renderFleetMatrix() {
     }
 
     html += `
-      <div class="fleet-sat-card ${statusClass}" onclick="openSatDetailModal('${sat.id}')" title="Кликните для детальной телеметрии ${sat.id}">
+      <div class="fleet-sat-card ${statusClass}" onclick="openAvionicsDrawer('${sat.id}')" title="Кликните для открытия авионики ${sat.id}">
         <div class="fleet-card-top">
           <span class="fleet-card-id">${sat.id}</span>
           <span class="fleet-card-status-tag">${statusLabel}</span>
@@ -1184,6 +1198,9 @@ function renderSatellitesTable() {
  * Открытие модального окна подробной телеметрии аппарата
  */
 function openSatDetailModal(satId) {
+  if (typeof openAvionicsDrawer === 'function') {
+    openAvionicsDrawer(satId);
+  }
   const sat = AppState.satellites.find(s => s.id === satId);
   if (!sat) return;
 
@@ -2096,6 +2113,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Закрытие алерта
   document.getElementById('alertClose').addEventListener('click', hideAlert);
 
+  // Инициализация аэрокосмических модулей ЦУП
+  if (typeof OrbitalMap === 'function') {
+    window.orbitalMapInstance = new OrbitalMap('orbitalMapCanvas');
+  }
+  if (typeof PassGantt === 'function') {
+    window.passGanttInstance = new PassGantt('passGanttContainer');
+  }
+  if (typeof FlightDirectorLog === 'function') {
+    window.flightLogInstance = new FlightDirectorLog('flightLogStream');
+  }
+
   // Табы рабочей зоны
   document.querySelectorAll('.nav-tab').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2106,12 +2134,51 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetTab = document.getElementById(btn.dataset.tab);
       if (targetTab) targetTab.classList.add('active');
 
-      // Если переключились на графики — перерисовываем
-      if (btn.dataset.tab === 'tabCharts') {
+      // Реакция на переключение табов
+      if (btn.dataset.tab === 'tabMap') {
+        if (window.orbitalMapInstance) window.orbitalMapInstance.resize();
+        if (window.passGanttInstance) window.passGanttInstance.render();
+      } else if (btn.dataset.tab === 'tabCharts') {
         renderCharts();
+      } else if (btn.dataset.tab === 'tabFlightLog') {
+        if (window.flightLogInstance) window.flightLogInstance.render();
       }
     });
   });
+
+  // Фильтры и кнопки журнала полетов (Flight Log)
+  document.querySelectorAll('.btn-log-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.btn-log-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (window.flightLogInstance) {
+        window.flightLogInstance.setFilter(btn.dataset.filter);
+      }
+    });
+  });
+
+  const searchLogInput = document.getElementById('searchFlightLog');
+  if (searchLogInput) {
+    searchLogInput.addEventListener('input', (e) => {
+      if (window.flightLogInstance) {
+        window.flightLogInstance.setSearch(e.target.value);
+      }
+    });
+  }
+
+  const btnExportLog = document.getElementById('btnExportFlightLog');
+  if (btnExportLog) {
+    btnExportLog.addEventListener('click', () => {
+      if (window.flightLogInstance) window.flightLogInstance.exportTxt();
+    });
+  }
+
+  const btnClearLog = document.getElementById('btnClearFlightLog');
+  if (btnClearLog) {
+    btnClearLog.addEventListener('click', () => {
+      if (window.flightLogInstance) window.flightLogInstance.clear();
+    });
+  }
 
   // Управление шагами
   document.getElementById('btnStep1').addEventListener('click', () => {
