@@ -795,6 +795,9 @@ function renderAll() {
   renderCharts();
 
   // Обновление аэрокосмических модулей ЦУП
+  if (window.globe3dInstance) {
+    window.globe3dInstance.updateState();
+  }
   if (window.orbitalMapInstance) {
     window.orbitalMapInstance.render();
   }
@@ -2114,13 +2117,22 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('alertClose').addEventListener('click', hideAlert);
 
   // Инициализация аэрокосмических модулей ЦУП
-  if (typeof OrbitalMap === 'function') {
+  if (typeof Globe3D === 'function' && document.getElementById('globe3dContainer')) {
+    window.globe3dInstance = new Globe3D('globe3dContainer');
+    document.getElementById('btnGlobeAutoRotate')?.addEventListener('click', () => {
+      window.globe3dInstance.toggleAutoRotate();
+    });
+    document.getElementById('btnGlobeResetView')?.addEventListener('click', () => {
+      window.globe3dInstance.resetView();
+    });
+  }
+  if (typeof OrbitalMap === 'function' && document.getElementById('orbitalMapCanvas')) {
     window.orbitalMapInstance = new OrbitalMap('orbitalMapCanvas');
   }
-  if (typeof PassGantt === 'function') {
+  if (typeof PassGantt === 'function' && document.getElementById('passGanttContainer')) {
     window.passGanttInstance = new PassGantt('passGanttContainer');
   }
-  if (typeof FlightDirectorLog === 'function') {
+  if (typeof FlightDirectorLog === 'function' && document.getElementById('flightLogStream')) {
     window.flightLogInstance = new FlightDirectorLog('flightLogStream');
   }
 
@@ -2136,6 +2148,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Реакция на переключение табов
       if (btn.dataset.tab === 'tabMap') {
+        if (window.globe3dInstance) window.globe3dInstance.onResize();
         if (window.orbitalMapInstance) window.orbitalMapInstance.resize();
         if (window.passGanttInstance) window.passGanttInstance.render();
       } else if (btn.dataset.tab === 'tabCharts') {
