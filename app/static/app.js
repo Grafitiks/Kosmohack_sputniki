@@ -2119,6 +2119,24 @@ document.addEventListener('DOMContentLoaded', () => {
   // Инициализация аэрокосмических модулей ЦУП
   if (typeof Globe3D === 'function' && document.getElementById('globe3dContainer')) {
     window.globe3dInstance = new Globe3D('globe3dContainer');
+    
+    const btnFlight = document.getElementById('btnGlobeFlightToggle');
+    btnFlight?.addEventListener('click', () => {
+      const isRunning = window.globe3dInstance.toggleFlight();
+      btnFlight.textContent = isRunning ? '▶️ Полёт: 60 FPS' : '⏸️ Полёт: Пауза';
+      btnFlight.style.color = isRunning ? '#10b981' : '#f59e0b';
+    });
+
+    let speedIdx = 0;
+    const speeds = [1, 2.5, 5];
+    const speedLabels = ['⚡ 1x Скорость', '⚡ 2.5x Скорость', '⚡ 5x Скорость'];
+    const btnSpeed = document.getElementById('btnGlobeSpeedToggle');
+    btnSpeed?.addEventListener('click', () => {
+      speedIdx = (speedIdx + 1) % speeds.length;
+      window.globe3dInstance.setSpeedMultiplier(speeds[speedIdx]);
+      btnSpeed.textContent = speedLabels[speedIdx];
+    });
+
     document.getElementById('btnGlobeAutoRotate')?.addEventListener('click', () => {
       window.globe3dInstance.toggleAutoRotate();
     });
