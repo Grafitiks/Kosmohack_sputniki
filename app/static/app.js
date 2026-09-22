@@ -18,6 +18,7 @@ const AppState = {
   scenarioId: 'P01_intro',
   scenarioTitle: 'Ознакомительная смена: 16 аппаратов',
   goal: 'priority',
+  algorithm: 'smart',
   step: 0,
   totalSteps: 48,
   satellites: [],
@@ -146,7 +147,7 @@ async function loadMockScenarios() {
 /**
  * Старт новой смены: POST /api/sessions
  */
-async function apiStartSession(scenarioId, goal, customJson = null, overrides = null) {
+async function apiStartSession(scenarioId, goal, algorithm = 'smart', customJson = null, overrides = null) {
   stopAutoPlay(false);
   showLoader('Создание новой смены...');
   hideAlert();
@@ -154,8 +155,8 @@ async function apiStartSession(scenarioId, goal, customJson = null, overrides = 
   if (!AppState.isMockMode) {
     try {
       const payload = customJson 
-        ? { scenario: customJson, goal: goal }
-        : { scenario_id: scenarioId, goal: goal };
+        ? { scenario: customJson, goal: goal, algorithm: algorithm }
+        : { scenario_id: scenarioId, goal: goal, algorithm: algorithm };
       
       if (overrides && Object.keys(overrides).length > 0) {
         payload.overrides = overrides;
@@ -511,10 +512,46 @@ async function apiChangeGoal(newGoal) {
 }
 
 /**
+ * Смена алгоритма планирования: POST /api/sessions/{id}/algorithm
+ */
+async function apiSetAlgorithm(newAlg) {
+  showLoader(`Переключение алгоритма на ${newAlg}...`);
+  hideAlert();
+
+  if (!AppState.isMockMode && AppState.sessionId) {
+    try {
+      const res = await fetch(`/api/sessions/${AppState.sessionId}/algorithm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ algorithm: newAlg })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP ${res.status}`);
+      }
+      const state = await res.json();
+      applyState(state);
+      hideLoader();
+      showAlert(`Алгоритм смены переключен на: ${newAlg === 'smart' ? '🧠 Smart Lookahead' : '⚙️ Baseline'}`);
+      return;
+    } catch (err) {
+      showAlert(`Не удалось изменить алгоритм: ${err.message}`);
+      hideLoader();
+      return;
+    }
+  }
+
+  AppState.algorithm = newAlg;
+  const algSelect = document.getElementById('algorithmSelect');
+  if (algSelect) algSelect.value = newAlg;
+  hideLoader();
+}
+
+/**
  * Сравнение вариантов: POST /api/sessions/{id}/compare
  */
-async function apiCompare(goalA, goalB) {
-  showLoader('Расчёт сравнения стратегий...');
+async function apiCompare(goalA, goalB, algA = 'smart', algB = 'baseline') {
+  showLoader('Расчёт сравнения вариантов и алгоритмов...');
   hideAlert();
 
   if (!AppState.isMockMode && AppState.sessionId) {
@@ -522,7 +559,10 @@ async function apiCompare(goalA, goalB) {
       const res = await fetch(`/api/sessions/${AppState.sessionId}/compare`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goal_a: goalA, goal_b: goalB })
+        body: JSON.stringify({
+          a: { goal: goalA, algorithm: algA },
+          b: { goal: goalB, algorithm: algB }
+        })
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -544,6 +584,69 @@ async function apiCompare(goalA, goalB) {
   } catch (e) {
     hideLoader();
     showAlert(`Не удалось загрузить данные сравнения: ${e.message}`);
+    return null;
+  }
+}
+
+/**
+ * Получение аудита решений (Explain): GET /api/sessions/{id}/explain или /explain/{job_id}
+ */
+async function apiGetExplain(jobId = null) {
+  const url = jobId 
+    ? `/api/sessions/${AppState.sessionId}/explain/${jobId}`
+    : `/api/sessions/${AppState.sessionId}/explain`;
+  
+  if (!AppState.isMockMode && AppState.sessionId) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      console.warn('Ошибка вызова API explain:', e);
+    }
+  }
+
+  // Автономный мок-режим
+  try {
+    const mockData = await fetchMock('explain_example.json');
+    if (jobId) {
+      const found = (mockData.top_priority_jobs || []).find(j => j.job_id === jobId);
+      return found || {
+        job_id: jobId,
+        status: 'waiting',
+        text: `Задание ${jobId}: в автономном режиме. Данные формируются математической моделью.`,
+        proof: { contact_steps: 1, work_steps: 2 },
+        verdict: 'impossible_by_contact_window',
+        lost_steps_by_reason: {}
+      };
+    }
+    return mockData;
+  } catch (err) {
+    console.warn('Не удалось загрузить explain mock:', err);
+    return null;
+  }
+}
+
+/**
+ * Получение статистики загрузки флота (Stats): GET /api/sessions/{id}/stats
+ */
+async function apiGetStats() {
+  if (!AppState.isMockMode && AppState.sessionId) {
+    try {
+      const res = await fetch(`/api/sessions/${AppState.sessionId}/stats`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      console.warn('Ошибка вызова API stats:', e);
+    }
+  }
+
+  try {
+    return await fetchMock('stats_example.json');
+  } catch (err) {
+    console.warn('Не удалось загрузить stats mock:', err);
     return null;
   }
 }
@@ -608,6 +711,7 @@ function applyState(state) {
   AppState.scenarioId = state.scenario || AppState.scenarioId;
   AppState.scenarioTitle = state.title || AppState.scenarioTitle;
   AppState.goal = state.goal || AppState.goal;
+  AppState.algorithm = state.algorithm || AppState.algorithm || 'smart';
   AppState.step = state.step !== undefined ? state.step : AppState.step;
   AppState.totalSteps = state.total_steps || AppState.totalSteps || 48;
   AppState.satellites = state.satellites || [];
@@ -625,6 +729,14 @@ function applyState(state) {
   // Активируем кнопки действий
   document.getElementById('btnCompare').disabled = false;
   document.getElementById('btnDownloadResult').disabled = false;
+  const btnExplain = document.getElementById('btnOpenExplain');
+  if (btnExplain) btnExplain.disabled = false;
+  const btnStats = document.getElementById('btnOpenStats');
+  if (btnStats) btnStats.disabled = false;
+  const btnToolbarExplain = document.getElementById('btnToolbarExplain');
+  if (btnToolbarExplain) btnToolbarExplain.disabled = false;
+  const btnToolbarStats = document.getElementById('btnToolbarStats');
+  if (btnToolbarStats) btnToolbarStats.disabled = false;
 
   renderAll();
   if (AppState.step >= AppState.totalSteps) {
@@ -854,6 +966,18 @@ function renderHeaderAndKPI() {
     
   // Цель
   document.getElementById('goalSelect').value = AppState.goal || 'priority';
+
+  // Алгоритм
+  const algSelect = document.getElementById('algorithmSelect');
+  if (algSelect && AppState.algorithm) {
+    algSelect.value = AppState.algorithm;
+  }
+  const goalNotice = document.getElementById('goalNotice');
+  if (goalNotice) {
+    goalNotice.textContent = AppState.algorithm === 'smart' 
+      ? '🧠 Smart Lookahead: прогнозирование окон и баланс SOC' 
+      : '⚙️ Baseline: жадная эвристика без упреждения';
+  }
 
   // Шаг и время (1 шаг = 5 мин)
   const currentMinutes = AppState.step * 5;
@@ -1219,7 +1343,14 @@ function renderJobsTable() {
           ${(job.eligible_satellites || []).join(', ')}
         </td>
         <td>${statusBadge}</td>
-        <td>${comment}</td>
+        <td>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+            <span>${comment}</span>
+            <button class="btn-job-explain" data-job-id="${job.id}" title="Аудит решений планировщика по ${job.id}">
+              🔍 Аудит
+            </button>
+          </div>
+        </td>
       </tr>
     `;
   });
@@ -1501,8 +1632,10 @@ function renderCompareModal(compData) {
   const sumA = a.summary || {};
   const sumB = b.summary || {};
 
-  document.getElementById('compNameA').textContent = a.goal || 'A';
-  document.getElementById('compNameB').textContent = b.goal || 'B';
+  const algLabelA = a.algorithm ? (a.algorithm === 'smart' ? '🧠 Smart' : '⚙️ Baseline') : '';
+  const algLabelB = b.algorithm ? (b.algorithm === 'smart' ? '🧠 Smart' : '⚙️ Baseline') : '';
+  document.getElementById('compNameA').textContent = algLabelA ? `${algLabelA} (${a.goal || 'priority'})` : (a.goal || 'A');
+  document.getElementById('compNameB').textContent = algLabelB ? `${algLabelB} (${b.goal || 'revenue'})` : (b.goal || 'B');
 
   const jobsA = sumA.jobs_completed !== undefined ? sumA.jobs_completed : 0;
   const jobsB = sumB.jobs_completed !== undefined ? sumB.jobs_completed : 0;
@@ -1585,6 +1718,314 @@ function renderCompareModal(compData) {
 
   // Вердикт
   document.getElementById('verdictText').textContent = compData.verdict || 'Сравнение выполнено успешно.';
+}
+
+/**
+ * Открытие модального окна аудита решений (Explain Engine · О7)
+ */
+async function openExplainModal(targetJobId = null) {
+  const modal = document.getElementById('modalExplain');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  showLoader('Загрузка аудита решений планировщика...');
+  const explainData = await apiGetExplain(null);
+  hideLoader();
+
+  renderExplainModal(explainData, targetJobId);
+
+  if (targetJobId) {
+    const tabTop = document.getElementById('btnExplainTabTop');
+    const tabDetail = document.getElementById('btnExplainTabJobDetail');
+    const secTop = document.getElementById('explainSectionTop');
+    const secDetail = document.getElementById('explainSectionDetail');
+    if (tabTop && tabDetail && secTop && secDetail) {
+      tabTop.classList.remove('active');
+      tabDetail.classList.add('active');
+      secTop.classList.add('hidden');
+      secDetail.classList.remove('hidden');
+    }
+    const input = document.getElementById('explainJobIdInput');
+    if (input) input.value = targetJobId;
+    await renderJobExplain(targetJobId);
+  }
+}
+
+/**
+ * Отрисовка модального окна Explain
+ */
+function renderExplainModal(data, targetJobId = null) {
+  if (!data) return;
+
+  const notComp = data.jobs_not_completed !== undefined ? data.jobs_not_completed : 0;
+  const reasons = data.reasons || {};
+  const impossibleCount = reasons.impossible_by_contact_window || 0;
+  const notReleasedCount = reasons.not_released_yet || 0;
+  const energyCount = (reasons.energy_reserve || 0) + (reasons.occupied || 0);
+
+  const elNotComp = document.getElementById('explainNotCompletedCount');
+  if (elNotComp) elNotComp.textContent = notComp;
+  const elImp = document.getElementById('explainImpossibleCount');
+  if (elImp) elImp.textContent = impossibleCount;
+  const elNotRel = document.getElementById('explainNotReleasedCount');
+  if (elNotRel) elNotRel.textContent = notReleasedCount;
+  const elEnergy = document.getElementById('explainEnergyCount');
+  if (elEnergy) elEnergy.textContent = energyCount;
+
+  // Отрисовка таблицы топ-задач с высоким приоритетом
+  const tbody = document.getElementById('explainTopTbody');
+  if (!tbody) return;
+
+  const topJobs = data.top_priority_jobs || [];
+  if (topJobs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="table-empty">Все срочные задания выполнены или отсутствуют</td></tr>';
+    return;
+  }
+
+  let html = '';
+  topJobs.forEach(job => {
+    let verdictBadge = '';
+    if (job.verdict === 'impossible_by_contact_window') {
+      verdictBadge = '<span class="audit-badge audit-badge-danger">⚠️ Физически невозможно (дефицит окон)</span>';
+    } else if (job.verdict === 'not_released_yet') {
+      verdictBadge = '<span class="audit-badge audit-badge-info">Окно ещё не открылось</span>';
+    } else if (job.verdict === 'on_track') {
+      verdictBadge = '<span class="audit-badge audit-badge-success">В графике / исполняется</span>';
+    } else if (job.verdict === 'energy_reserve') {
+      verdictBadge = '<span class="audit-badge audit-badge-danger">Защита резерва АКБ (SOC &lt; 30%)</span>';
+    } else {
+      verdictBadge = `<span class="audit-badge audit-badge-warn">${job.verdict || 'В очереди'}</span>`;
+    }
+
+    const proof = job.proof || {};
+    const contactSteps = proof.contact_steps !== undefined ? proof.contact_steps : '—';
+    const workSteps = proof.work_steps !== undefined ? proof.work_steps : (job.work_steps || '—');
+    const isImpossible = (typeof contactSteps === 'number' && typeof workSteps === 'number' && contactSteps < workSteps);
+
+    let statusBadge = '';
+    if (job.status === 'done') statusBadge = '<span class="badge badge-success">done</span>';
+    else if (job.status === 'missed') statusBadge = '<span class="badge badge-danger">missed</span>';
+    else if (job.status === 'in_progress' || job.status === 'active') statusBadge = '<span class="badge badge-info">active</span>';
+    else statusBadge = '<span class="badge badge-muted">waiting</span>';
+
+    html += `
+      <tr>
+        <td class="font-mono"><strong>${job.job_id}</strong></td>
+        <td><span class="badge ${job.kind === 'downlink' ? 'badge-info' : 'badge-muted'}">${job.kind || '—'}</span></td>
+        <td class="text-gold font-mono">$${Number(job.value_usd || 0).toFixed(2)}</td>
+        <td class="font-mono">${job.release_step} .. ${job.deadline_step}</td>
+        <td class="font-mono ${isImpossible ? 'text-danger font-bold' : ''}">
+          ${contactSteps} / ${workSteps}
+          ${isImpossible ? ' ❌' : ' ✓'}
+        </td>
+        <td>${statusBadge}</td>
+        <td>${verdictBadge}</td>
+        <td>
+          <button class="btn btn-xs btn-outline btn-explain-row-inspect" data-job-id="${job.job_id}">
+            Детали
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
+
+/**
+ * Отрисовка аудита конкретного задания (Explain Job)
+ */
+async function renderJobExplain(jobId) {
+  const container = document.getElementById('jobAuditDetails');
+  if (!container) return;
+
+  if (!jobId) {
+    container.innerHTML = '<span class="text-tertiary">Укажите ID задания для получения пошагового аудита.</span>';
+    return;
+  }
+
+  container.innerHTML = '<span class="text-accent">Анализ причин и математическое доказательство...</span>';
+  
+  const audit = await apiGetExplain(jobId);
+  if (!audit) {
+    container.innerHTML = `<span class="text-danger">Не удалось получить данные для задания ${jobId}</span>`;
+    return;
+  }
+
+  const proof = audit.proof || {};
+  const isImpossible = (proof.contact_steps !== undefined && proof.work_steps !== undefined && proof.contact_steps < proof.work_steps);
+
+  let reasonRows = '';
+  const lost = audit.lost_steps_by_reason || {};
+  const REASON_TITLES = {
+    occupied: 'Занятость подходящих спутников другими задачами',
+    calibration: 'Аппараты выполняли плановую калибровку сенсоров',
+    energy_reserve: 'Защита батареи (разряд опустился бы ниже резерва 30%)',
+    thermal_limit: 'Выход за безопасный температурный лимит 5..45°C',
+    ground_capacity: 'Исчерпан параллельный лимит наземных станций связи',
+    satellite_unavailable: 'Аппараты в аварии или на техобслуживании (outage)'
+  };
+
+  for (const [rKey, count] of Object.entries(lost)) {
+    if (count > 0) {
+      reasonRows += `
+        <div class="audit-reason-row">
+          <span class="audit-reason-name">${REASON_TITLES[rKey] || rKey}:</span>
+          <strong class="font-mono text-warning">${count} шагов</strong>
+        </div>
+      `;
+    }
+  }
+
+  if (!reasonRows) {
+    reasonRows = '<div style="color:var(--text-tertiary); font-size:12px;">Потерь шагов по вторичным причинам не зафиксировано</div>';
+  }
+
+  container.innerHTML = `
+    <div class="job-audit-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="font-mono" style="font-size:15px; font-weight:700; color:var(--text-primary);">${audit.job_id || jobId}</span>
+        <span class="badge ${audit.status === 'done' ? 'badge-success' : (audit.status === 'missed' ? 'badge-danger' : 'badge-info')}">
+          ${audit.status || 'active'}
+        </span>
+        ${isImpossible ? '<span class="audit-badge audit-badge-danger">Математически невозможно</span>' : ''}
+      </div>
+      <span class="font-mono text-gold" style="font-weight:700;">$${Number(audit.value_usd || 0).toFixed(2)}</span>
+    </div>
+
+    <div style="margin-top:10px;">
+      <p style="font-size:13px; line-height:1.5; color:var(--text-secondary); margin-bottom:12px;">
+        ${audit.text || 'Анализ завершен.'}
+      </p>
+
+      ${isImpossible ? `
+        <div class="impossible-proof-box">
+          <div style="font-weight:700; color:var(--accent-red); margin-bottom:4px;">
+            ⚠️ Математическое доказательство (Критерий О7):
+          </div>
+          <div style="font-size:12px; color:var(--text-secondary);">
+            Суммарная длительность всех окон связи со всеми допустимыми аппаратами от релиза (ш.${audit.release_step !== undefined ? audit.release_step : '—'}) до дедлайна (ш.${audit.deadline_step !== undefined ? audit.deadline_step : '—'}) составляет 
+            <strong class="text-danger font-mono">${proof.contact_steps}</strong> шагов, в то время как выполнение задания требует 
+            <strong class="text-accent font-mono">${proof.work_steps}</strong> шагов.
+            <br>
+            <em>Вывод: Задание не может быть выполнено ни одним физически реализуемым планом (contact_steps &lt; work_steps). Вины планировщика нет.</em>
+          </div>
+        </div>
+      ` : ''}
+
+      <div style="margin-top:12px;">
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-tertiary); margin-bottom:6px;">
+          РАСПРЕДЕЛЕНИЕ ПОТЕРЯННЫХ ШАГОВ ВОЗМОЖНОСТИ:
+        </div>
+        <div class="audit-reasons-list">
+          ${reasonRows}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Открытие модального окна статистики загрузки флота (Stats)
+ */
+async function openStatsModal() {
+  const modal = document.getElementById('modalStats');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  showLoader('Загрузка статистики утилизации группировки...');
+  const statsData = await apiGetStats();
+  hideLoader();
+
+  renderStatsModal(statsData);
+}
+
+/**
+ * Отрисовка модального окна Stats
+ */
+function renderStatsModal(statsData) {
+  if (!statsData) return;
+
+  const sats = statsData.satellites || [];
+  let totalJobSteps = 0;
+  let totalCalibSteps = 0;
+  let totalIdleSteps = 0;
+  let totalAllSteps = 0;
+
+  sats.forEach(s => {
+    totalJobSteps += s.job_steps || 0;
+    totalCalibSteps += s.calibration_steps || 0;
+    totalIdleSteps += s.idle_steps || 0;
+    totalAllSteps += s.steps_total || 0;
+  });
+
+  const jobShare = totalAllSteps > 0 ? ((totalJobSteps / totalAllSteps) * 100).toFixed(1) : '0.0';
+  const calibShare = totalAllSteps > 0 ? ((totalCalibSteps / totalAllSteps) * 100).toFixed(1) : '0.0';
+  const idleShare = totalAllSteps > 0 ? ((totalIdleSteps / totalAllSteps) * 100).toFixed(1) : '0.0';
+  const contactUtil = statsData.contact_utilization !== undefined && statsData.contact_utilization !== null
+    ? (Number(statsData.contact_utilization) * 100).toFixed(1)
+    : '0.0';
+
+  const elJob = document.getElementById('statsJobShare');
+  if (elJob) elJob.textContent = `${jobShare}%`;
+  const elCal = document.getElementById('statsCalibShare');
+  if (elCal) elCal.textContent = `${calibShare}%`;
+  const elIdle = document.getElementById('statsIdleShare');
+  if (elIdle) elIdle.textContent = `${idleShare}%`;
+  const elContact = document.getElementById('statsContactUtil');
+  if (elContact) elContact.textContent = `${contactUtil}%`;
+
+  // Отрисовка таблицы по аппаратам
+  const tbody = document.getElementById('statsSatellitesTbody');
+  if (!tbody) return;
+
+  if (sats.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="table-empty">Нет данных статистики аппаратов</td></tr>';
+    return;
+  }
+
+  let html = '';
+  sats.forEach(s => {
+    const jShare = ((s.job_share || 0) * 100).toFixed(1);
+    const cUtil = s.contact_utilization !== undefined && s.contact_utilization !== null
+      ? ((s.contact_utilization) * 100).toFixed(1) + '%'
+      : '—';
+
+    let topReason = '—';
+    let topReasonCount = 0;
+    const IDLE_TITLES = {
+      no_work: 'Ожидание задач',
+      energy_reserve: 'Дефицит заряда (SOC < 30%)',
+      calibration_needed: 'Ожидание калибровки',
+      ground_capacity: 'Лимит станций связи',
+      satellite_unavailable: 'Отказ аппарата',
+      thermal_limit: 'Температурный предел',
+      other: 'Прочее'
+    };
+    if (s.idle_reasons) {
+      for (const [r, count] of Object.entries(s.idle_reasons)) {
+        if (count > topReasonCount) {
+          topReasonCount = count;
+          topReason = `${IDLE_TITLES[r] || r} (${count} ш.)`;
+        }
+      }
+    }
+
+    html += `
+      <tr>
+        <td class="font-mono"><strong>${s.id}</strong></td>
+        <td class="font-mono">${s.job_steps}</td>
+        <td class="font-mono">${s.calibration_steps}</td>
+        <td class="font-mono">${s.idle_steps}</td>
+        <td class="font-mono text-accent font-bold">${jShare}%</td>
+        <td class="font-mono">${s.contact_steps || 0}</td>
+        <td class="font-mono text-gold font-bold">${cUtil}</td>
+        <td style="font-size:12px; color:var(--text-secondary);">${topReason}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
 }
 
 // =============================================================================
@@ -1699,6 +2140,14 @@ document.addEventListener('DOMContentLoaded', () => {
     apiChangeGoal(e.target.value);
   });
 
+  // Смена алгоритма планирования
+  const algSelect = document.getElementById('algorithmSelect');
+  if (algSelect) {
+    algSelect.addEventListener('change', (e) => {
+      apiSetAlgorithm(e.target.value);
+    });
+  }
+
   // Быстрый выбор спутников для графиков
   document.getElementById('btnSelectAllSats').addEventListener('click', () => {
     AppState.satellites.forEach(s => AppState.selectedSatellites.add(s.id));
@@ -1780,6 +2229,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btnConfirmStartSession').addEventListener('click', async () => {
     const goal = document.querySelector('input[name="startGoal"]:checked').value;
+    const algRadio = document.querySelector('input[name="startAlgorithm"]:checked');
+    const algorithm = algRadio ? algRadio.value : 'smart';
     const scenarioId = document.getElementById('selectScenarioPreset').value;
     const customJson = AppState.customScenarioJson;
 
@@ -1819,7 +2270,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    const success = await apiStartSession(scenarioId, goal, customJson, overrides);
+    const success = await apiStartSession(scenarioId, goal, algorithm, customJson, overrides);
     if (success) {
       modalNewSession.classList.add('hidden');
     }
@@ -2112,7 +2563,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalCompare = document.getElementById('modalCompare');
   document.getElementById('btnCompare').addEventListener('click', async () => {
     modalCompare.classList.remove('hidden');
-    const compData = await apiCompare('priority', 'revenue');
+    const algA = document.getElementById('compareAlgA') ? document.getElementById('compareAlgA').value : 'smart';
+    const algB = document.getElementById('compareAlgB') ? document.getElementById('compareAlgB').value : 'baseline';
+    const goalA = document.getElementById('compareGoalA') ? document.getElementById('compareGoalA').value : 'priority';
+    const goalB = document.getElementById('compareGoalB') ? document.getElementById('compareGoalB').value : 'revenue';
+    const compData = await apiCompare(goalA, goalB, algA, algB);
     renderCompareModal(compData);
   });
 
@@ -2126,9 +2581,122 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnRunCompareRequest').addEventListener('click', async () => {
     const goalA = document.getElementById('compareGoalA').value;
     const goalB = document.getElementById('compareGoalB').value;
-    const compData = await apiCompare(goalA, goalB);
+    const algA = document.getElementById('compareAlgA') ? document.getElementById('compareAlgA').value : 'smart';
+    const algB = document.getElementById('compareAlgB') ? document.getElementById('compareAlgB').value : 'baseline';
+    const compData = await apiCompare(goalA, goalB, algA, algB);
     renderCompareModal(compData);
   });
+
+  // ==========================
+  // МОДАЛКА: АУДИТ РЕШЕНИЙ (EXPLAIN · О7)
+  // ==========================
+  const modalExplain = document.getElementById('modalExplain');
+  const btnOpenExplain = document.getElementById('btnOpenExplain');
+  if (btnOpenExplain) {
+    btnOpenExplain.addEventListener('click', () => openExplainModal());
+  }
+  const btnToolbarExplain = document.getElementById('btnToolbarExplain');
+  if (btnToolbarExplain) {
+    btnToolbarExplain.addEventListener('click', () => openExplainModal());
+  }
+  const btnCloseExplain = document.getElementById('btnCloseExplainModal');
+  if (btnCloseExplain) {
+    btnCloseExplain.addEventListener('click', () => modalExplain.classList.add('hidden'));
+  }
+  const btnCloseExplainBtn = document.getElementById('btnCloseExplainModalBtn');
+  if (btnCloseExplainBtn) {
+    btnCloseExplainBtn.addEventListener('click', () => modalExplain.classList.add('hidden'));
+  }
+  const btnRefreshExplain = document.getElementById('btnRefreshExplain');
+  if (btnRefreshExplain) {
+    btnRefreshExplain.addEventListener('click', () => openExplainModal());
+  }
+
+  // Вкладки внутри Explain
+  const tabTop = document.getElementById('btnExplainTabTop');
+  const tabDetail = document.getElementById('btnExplainTabJobDetail');
+  const secTop = document.getElementById('explainSectionTop');
+  const secDetail = document.getElementById('explainSectionDetail');
+
+  if (tabTop && tabDetail && secTop && secDetail) {
+    tabTop.addEventListener('click', () => {
+      tabTop.classList.add('active');
+      tabDetail.classList.remove('active');
+      secTop.classList.remove('hidden');
+      secDetail.classList.add('hidden');
+    });
+    tabDetail.addEventListener('click', () => {
+      tabDetail.classList.add('active');
+      tabTop.classList.remove('active');
+      secDetail.classList.remove('hidden');
+      secTop.classList.add('hidden');
+    });
+  }
+
+  const btnRunJobExplain = document.getElementById('btnRunJobExplain');
+  if (btnRunJobExplain) {
+    btnRunJobExplain.addEventListener('click', () => {
+      const jobId = (document.getElementById('explainJobIdInput').value || '').trim().toUpperCase();
+      renderJobExplain(jobId);
+    });
+  }
+
+  // Клик по строке в таблице Explain Top Jobs для перехода к деталям
+  const explainTopTbody = document.getElementById('explainTopTbody');
+  if (explainTopTbody) {
+    explainTopTbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-explain-row-inspect');
+      if (btn) {
+        const jId = btn.getAttribute('data-job-id');
+        if (tabDetail && tabTop && secTop && secDetail) {
+          tabDetail.classList.add('active');
+          tabTop.classList.remove('active');
+          secDetail.classList.remove('hidden');
+          secTop.classList.add('hidden');
+        }
+        const input = document.getElementById('explainJobIdInput');
+        if (input) input.value = jId;
+        renderJobExplain(jId);
+      }
+    });
+  }
+
+  // Клик по кнопке аудита в основной таблице заданий смены
+  const jobsTbody = document.getElementById('jobsTbody');
+  if (jobsTbody) {
+    jobsTbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-job-explain');
+      if (btn) {
+        const jId = btn.getAttribute('data-job-id');
+        openExplainModal(jId);
+      }
+    });
+  }
+
+  // ==========================
+  // МОДАЛКА: СТАТИСТИКА ЗАГРУЗКИ ФЛОТА (STATS)
+  // ==========================
+  const modalStats = document.getElementById('modalStats');
+  const btnOpenStats = document.getElementById('btnOpenStats');
+  if (btnOpenStats) {
+    btnOpenStats.addEventListener('click', () => openStatsModal());
+  }
+  const btnToolbarStats = document.getElementById('btnToolbarStats');
+  if (btnToolbarStats) {
+    btnToolbarStats.addEventListener('click', () => openStatsModal());
+  }
+  const btnCloseStats = document.getElementById('btnCloseStatsModal');
+  if (btnCloseStats) {
+    btnCloseStats.addEventListener('click', () => modalStats.classList.add('hidden'));
+  }
+  const btnCloseStatsBtn = document.getElementById('btnCloseStatsModalBtn');
+  if (btnCloseStatsBtn) {
+    btnCloseStatsBtn.addEventListener('click', () => modalStats.classList.add('hidden'));
+  }
+  const btnRefreshStats = document.getElementById('btnRefreshStats');
+  if (btnRefreshStats) {
+    btnRefreshStats.addEventListener('click', () => openStatsModal());
+  }
 
   // ==========================
   // МОДАЛКА: ТЕЛЕМЕТРИЯ СПУТНИКА

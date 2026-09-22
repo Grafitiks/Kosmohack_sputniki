@@ -111,11 +111,23 @@
         <svg class="svg-btn-icon"><use href="#icon-zap"></use></svg>
         <span>Новая смена</span>
       </button>
-      <button class="btn btn-secondary" id="btnCompare" disabled>
+      <button class="btn btn-secondary" id="btnCompare" disabled title="Сравнение альтернативных вариантов и алгоритмов">
         <svg class="svg-btn-icon"><use href="#icon-scale"></use></svg>
-        <span>Сравнить варианты</span>
+        <span>Сравнить</span>
       </button>
-      <button class="btn btn-outline" id="btnDownloadResult" disabled>
+      <button class="btn btn-secondary" id="btnOpenExplain" disabled title="Аудит и объяснение решений планировщика (Explain Engine)">
+        <svg class="svg-btn-icon"><use href="#icon-shield"></use></svg>
+        <span>Explain</span>
+      </button>
+      <button class="btn btn-secondary" id="btnOpenStats" disabled title="Утилизация флота и аналитика ресурсов (Stats)">
+        <svg class="svg-btn-icon"><use href="#icon-activity"></use></svg>
+        <span>Stats</span>
+      </button>
+      <a href="/v2" class="btn btn-outline btn-v2-link" target="_blank" title="Открыть специализированный аналитический экран защиты /v2">
+        <svg class="svg-btn-icon"><use href="#icon-scale"></use></svg>
+        <span>/v2 Защита</span>
+      </a>
+      <button class="btn btn-outline" id="btnDownloadResult" disabled title="Скачать cosmo-B-ops-result-1.0">
         <svg class="svg-btn-icon"><use href="#icon-download"></use></svg>
         <span>Экспорт</span>
       </button>
@@ -193,19 +205,23 @@
         <div class="kpi-sub-line" id="kpiCriticalSocCount">Дефицит (&lt;20%): 0 шагов</div>
       </div>
 
-      <!-- Карточка 6: Цель управления -->
+      <!-- Карточка 6: Алгоритм и стратегия смены -->
       <div class="kpi-panel goal-panel">
         <div class="panel-header">
-          <span class="panel-label">СТРАТЕГИЯ ПЛАНИРОВАНИЯ</span>
+          <span class="panel-label">АЛГОРИТМ И ЦЕЛЬ СМЕНЫ</span>
           <svg class="panel-icon"><use href="#icon-activity"></use></svg>
         </div>
-        <div class="goal-control-wrapper">
-          <select id="goalSelect" class="select-goal">
-            <option value="priority">Приоритетное обслуживание (priority)</option>
-            <option value="revenue">Коммерческая отдача (revenue)</option>
+        <div class="goal-control-wrapper" style="display:flex; flex-direction:column; gap:6px;">
+          <select id="algorithmSelect" class="select-goal" title="Ядро планирования действий аппаратов">
+            <option value="smart" selected>🧠 Smart (Lookahead + SOC)</option>
+            <option value="baseline">⚙️ Baseline (Жадный отбор)</option>
+          </select>
+          <select id="goalSelect" class="select-goal" title="Критерий оптимизации смены">
+            <option value="priority">Приоритет задач (priority)</option>
+            <option value="revenue">Выручка (revenue)</option>
           </select>
         </div>
-        <div class="panel-footer" id="goalNotice">Определяет выбор алгоритма на шаге</div>
+        <div class="panel-footer" id="goalNotice">Умный выбор действий на каждом шаге</div>
       </div>
     </section>
 
@@ -255,6 +271,14 @@
       </div>
 
       <div class="toolbar-section">
+        <button class="btn btn-secondary btn-step" id="btnToolbarExplain" disabled title="Аудит решений и причин срыва заданий (Explain Engine)">
+          <svg class="svg-btn-icon"><use href="#icon-shield"></use></svg>
+          <span>🔍 Explain</span>
+        </button>
+        <button class="btn btn-secondary btn-step" id="btnToolbarStats" disabled title="Статистика утилизации ресурсов флота (Stats)">
+          <svg class="svg-btn-icon"><use href="#icon-activity"></use></svg>
+          <span>📊 Stats</span>
+        </button>
         <button class="btn btn-event" id="btnOpenEventModal">
           <svg class="svg-btn-icon"><use href="#icon-zap"></use></svg>
           <span>Ввести оперативное событие</span>
@@ -504,6 +528,26 @@
         </div>
 
         <div class="form-field">
+          <label>Алгоритм планирования (ядро):</label>
+          <div class="goal-radio-group">
+            <label class="goal-radio-item">
+              <input type="radio" name="startAlgorithm" value="smart" checked />
+              <div class="radio-desc">
+                <strong>🧠 Умный Lookahead (smart) — Рекомендуется</strong>
+                <span>Прогнозирование окон связи, упреждающая зарядка АКБ (>30%) и терморежим</span>
+              </div>
+            </label>
+            <label class="goal-radio-item">
+              <input type="radio" name="startAlgorithm" value="baseline" />
+              <div class="radio-desc">
+                <strong>⚙️ Базовый жадный (baseline)</strong>
+                <span>Простое правило (дедлайн, приоритет, стоимость) без упреждающего анализа</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-field">
           <label>Цель управления сменой:</label>
           <div class="goal-radio-group">
             <label class="goal-radio-item">
@@ -741,21 +785,29 @@
       <div class="window-body">
         <div class="compare-toolbar-row">
           <div class="pick-strategy">
-            <label>Стратегия A:</label>
-            <select id="compareGoalA" class="form-input">
-              <option value="priority" selected>priority (Приоритет)</option>
-              <option value="revenue">revenue (Выручка)</option>
+            <label>Вариант A:</label>
+            <select id="compareAlgA" class="form-input" style="width:105px;">
+              <option value="smart" selected>smart</option>
+              <option value="baseline">baseline</option>
+            </select>
+            <select id="compareGoalA" class="form-input" style="width:105px;">
+              <option value="priority" selected>priority</option>
+              <option value="revenue">revenue</option>
             </select>
           </div>
           <span class="vs-divider">ПРОТИВ</span>
           <div class="pick-strategy">
-            <label>Стратегия B:</label>
-            <select id="compareGoalB" class="form-input">
-              <option value="revenue" selected>revenue (Выручка)</option>
-              <option value="priority">priority (Приоритет)</option>
+            <label>Вариант B:</label>
+            <select id="compareAlgB" class="form-input" style="width:105px;">
+              <option value="baseline" selected>baseline</option>
+              <option value="smart">smart</option>
+            </select>
+            <select id="compareGoalB" class="form-input" style="width:105px;">
+              <option value="priority">priority</option>
+              <option value="revenue" selected>revenue</option>
             </select>
           </div>
-          <button class="btn btn-secondary" id="btnRunCompareRequest">Рассчитать</button>
+          <button class="btn btn-primary" id="btnRunCompareRequest">Рассчитать</button>
         </div>
 
         <div class="compare-columns-grid">
@@ -840,6 +892,160 @@
       <div class="window-footer">
         <button class="btn btn-secondary" id="btnToggleChartForThisSat">Показать на графике</button>
         <button class="btn btn-primary" id="btnCloseSatDetailModalBtn">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: АУДИТ РЕШЕНИЙ ПЛАНИРОВЩИКА (EXPLAIN · КРИТЕРИЙ О7) -->
+  <div class="modal-overlay hidden" id="modalExplain">
+    <div class="modal-window modal-window-wide">
+      <div class="window-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg class="svg-btn-icon text-accent" style="width:18px;height:18px;"><use href="#icon-shield"></use></svg>
+          <h3>Аудит решений планировщика (Explain Engine · О7)</h3>
+        </div>
+        <button class="window-close" id="btnCloseExplainModal">&times;</button>
+      </div>
+
+      <div class="window-body">
+        <!-- Сводка причин невыполнения -->
+        <div class="explain-summary-grid">
+          <div class="explain-stat-card">
+            <span class="stat-label">НЕ ВЫПОЛНЕНО</span>
+            <strong class="stat-num" id="explainNotCompletedCount">0</strong>
+            <span class="stat-desc">задач в пуле смены</span>
+          </div>
+          <div class="explain-stat-card warn">
+            <span class="stat-label">ДЕФИЦИТ ОКОН</span>
+            <strong class="stat-num text-warning" id="explainImpossibleCount">0</strong>
+            <span class="stat-desc">невозможно физически</span>
+          </div>
+          <div class="explain-stat-card info">
+            <span class="stat-label">ЕЩЁ НЕ ОТКРЫТО</span>
+            <strong class="stat-num text-accent" id="explainNotReleasedCount">0</strong>
+            <span class="stat-desc">релиз на будущих шагах</span>
+          </div>
+          <div class="explain-stat-card danger">
+            <span class="stat-label">ДЕФИЦИТ ЭНЕРГИИ</span>
+            <strong class="stat-num text-danger" id="explainEnergyCount">0</strong>
+            <span class="stat-desc">защита резерва АКБ</span>
+          </div>
+        </div>
+
+        <!-- Переключатель вкладок внутри Explain -->
+        <div class="event-type-tabs" style="margin-top: 10px;">
+          <button class="event-pill-tab active" id="btnExplainTabTop">Срочные задачи (Приоритет 3)</button>
+          <button class="event-pill-tab" id="btnExplainTabJobDetail">Детальный аудит задания</button>
+        </div>
+
+        <!-- Вкладка 1: Топ срочных задач -->
+        <div id="explainSectionTop" class="explain-section">
+          <div class="table-frame" style="max-height: 320px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Тип</th>
+                  <th>Выручка</th>
+                  <th>Окно (ш.)</th>
+                  <th>Контакты / Нужно</th>
+                  <th>Статус</th>
+                  <th>Вердикт математической модели</th>
+                  <th>Действие</th>
+                </tr>
+              </thead>
+              <tbody id="explainTopTbody">
+                <tr><td colspan="8" class="table-empty">Загрузка аудита заданий...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Вкладка 2: Детальный пошаговый аудит конкретного задания -->
+        <div id="explainSectionDetail" class="explain-section hidden">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom: 12px; flex-wrap: wrap;">
+            <label style="font-size:12px; color:var(--text-tertiary);">Выберите или введите ID задания:</label>
+            <input type="text" id="explainJobIdInput" placeholder="JOB-0001" class="form-input font-mono" style="max-width: 160px;" />
+            <button class="btn btn-secondary" id="btnRunJobExplain">Аудит задания</button>
+          </div>
+          <div class="job-audit-card" id="jobAuditDetails">
+            <span class="text-tertiary">Выберите задание из списка выше или введите его ID для полного пошагового аудита.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="window-footer">
+        <button class="btn btn-outline" id="btnRefreshExplain">Обновить аудит</button>
+        <button class="btn btn-primary" id="btnCloseExplainModalBtn">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: СТАТИСТИКА ЗАГРУЗКИ ФЛОТА (STATS) -->
+  <div class="modal-overlay hidden" id="modalStats">
+    <div class="modal-window modal-window-wide">
+      <div class="window-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg class="svg-btn-icon text-accent" style="width:18px;height:18px;"><use href="#icon-activity"></use></svg>
+          <h3>Утилизация группировки и загрузка ресурсов (Stats)</h3>
+        </div>
+        <button class="window-close" id="btnCloseStatsModal">&times;</button>
+      </div>
+
+      <div class="window-body">
+        <!-- 4 Ключевые метрики загрузки -->
+        <div class="explain-summary-grid">
+          <div class="explain-stat-card info">
+            <span class="stat-label">РАБОТА НАД ЗАДАЧАМИ</span>
+            <strong class="stat-num text-accent" id="statsJobShare">--%</strong>
+            <span class="stat-desc">от общего фонда времени</span>
+          </div>
+          <div class="explain-stat-card">
+            <span class="stat-label">КАЛИБРОВКА СЕНСОРОВ</span>
+            <strong class="stat-num text-success" id="statsCalibShare">--%</strong>
+            <span class="stat-desc">поддержание точности</span>
+          </div>
+          <div class="explain-stat-card warn">
+            <span class="stat-label">ПРОСТОЙ АППАРАТОВ</span>
+            <strong class="stat-num text-warning" id="statsIdleShare">--%</strong>
+            <span class="stat-desc">ожидание окон / энергии</span>
+          </div>
+          <div class="explain-stat-card">
+            <span class="stat-label">ОКНА СВЯЗИ С ЗЕМЛЕЙ</span>
+            <strong class="stat-num text-gold" id="statsContactUtil">--%</strong>
+            <span class="stat-desc">утилизация радиолиний</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 12px;">
+          <h5 style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:8px; color:var(--text-tertiary);">
+            СТАТУС И УТИЛИЗАЦИЯ ПО КАЖДОМУ АППАРАТУ:
+          </h5>
+          <div class="table-frame" style="max-height: 320px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Спутник</th>
+                  <th>Шагов работы</th>
+                  <th>Шагов калибровки</th>
+                  <th>Шагов простоя</th>
+                  <th>Доля работы %</th>
+                  <th>Окон контакта</th>
+                  <th>Утилизация контакта %</th>
+                  <th>Главная причина простоя</th>
+                </tr>
+              </thead>
+              <tbody id="statsSatellitesTbody">
+                <tr><td colspan="8" class="table-empty">Загрузка статистики группировки...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="window-footer">
+        <button class="btn btn-outline" id="btnRefreshStats">Обновить статистику</button>
+        <button class="btn btn-primary" id="btnCloseStatsModalBtn">Закрыть</button>
       </div>
     </div>
   </div>

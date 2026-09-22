@@ -24,7 +24,7 @@ if str(ROOT) not in sys.path:
 
 from fastapi import Body, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from model.operations import Session
@@ -391,6 +391,7 @@ def build_state(session_id: str, record: SessionRecord) -> dict:
         'scenario': env.s['meta']['id'],
         'title': env.s['meta']['title'],
         'goal': record.goal,
+        'algorithm': record.algorithm,
         'step': step,
         'total_steps': env.s['time']['steps'],
         'satellites': satellites,
@@ -543,6 +544,17 @@ def set_goal(session_id: str, payload: dict = Body(default={})):
         return build_state(session_id, record)
 
 
+@app.post('/api/sessions/{session_id}/algorithm')
+def set_algorithm(session_id: str, payload: dict = Body(default={})):
+    record = get_record(session_id)
+    with record.lock:
+        algorithm = payload.get('algorithm')
+        if algorithm not in ALGORITHMS:
+            raise ApiError(f'algorithm должен быть одним из {list(ALGORITHMS)}')
+        record.algorithm = algorithm
+        return build_state(session_id, record)
+
+
 def _variant_spec(payload: dict, key: str, record: SessionRecord) -> tuple[str, str] | None:
     """Разбираю описание одной ветки сравнения: {"goal": ..., "algorithm": ...}.
     Оба поля необязательны — чего нет, беру из текущих настроек сессии.
@@ -671,6 +683,14 @@ try:
     STATIC_DIR.mkdir(parents=True, exist_ok=True)
 except OSError:
     pass
+
+@app.get('/v2')
+def get_v2_page():
+    v2_file = STATIC_DIR / 'v2.html'
+    if v2_file.is_file():
+        return FileResponse(v2_file)
+    return JSONResponse(status_code=404, content={'error': 'v2.html не найден'})
+
 
 # Статика — после всех /api/... роутов, чтобы они не перекрылись.
 if STATIC_DIR.is_dir():
