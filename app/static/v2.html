@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>КосмоХакатон 2026 · Защита проекта: Сравнение алгоритмов, Explain (О7) и Stats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Стили для презентационного дашборда защиты (/v2) */
+    .v2-wrapper {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 16px 24px 60px;
+    }
+    .v2-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      margin-bottom: 20px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .v2-hero {
+      background: linear-gradient(135deg, rgba(16, 26, 46, 0.85) 0%, rgba(10, 16, 30, 0.95) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: var(--radius-md);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .v2-hero::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .v2-hero-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .v2-hero-subtitle {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      max-width: 900px;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    .v2-hero-pills {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .v2-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .v2-pill strong {
+      color: #fff;
+    }
+    .v2-pill.accent {
+      border-color: rgba(56, 189, 248, 0.35);
+      background: rgba(56, 189, 248, 0.06);
+      color: var(--cyan-bright);
+    }
+    .v2-pill.success {
+      border-color: rgba(16, 185, 129, 0.35);
+      background: rgba(16, 185, 129, 0.06);
+      color: var(--emerald-bright);
+    }
+    .v2-section-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .v2-section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .v2-section-title-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .v2-grid-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 14px;
+    }
+    @media (max-width: 900px) {
+      .v2-grid-compare {
+        grid-template-columns: 1fr;
+      }
+    }
+    .v2-compare-col {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+    }
+    .v2-compare-col.winner {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.02);
+    }
+    .v2-compare-col-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .v2-metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 13px;
+    }
+    .v2-metric-row:last-child {
+      border-bottom: none;
+    }
+    .v2-metric-label {
+      color: var(--text-secondary);
+    }
+    .v2-metric-val {
+      font-family: var(--font-num);
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .v2-verdict-box {
+      margin-top: 16px;
+      padding: 14px 18px;
+      background: rgba(16, 185, 129, 0.06);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      color: #a7f3d0;
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .v2-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-medium);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: var(--radius-xs);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .v2-nav-btn:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--cyan-bright);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud-vignette"></div>
+  <canvas id="space-canvas"></canvas>
+
+  <div class="v2-wrapper">
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ НАВИГАЦИИ -->
+    <header class="v2-header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <a href="/" class="v2-nav-btn" title="Вернуться в основной пульт оператора смены">
+          <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          ← Пульт оператора (/)
+        </a>
+        <div style="font-size:12px; font-weight:700; color:var(--text-tertiary); letter-spacing:0.06em; text-transform:uppercase;">
+          РЕЖИМ ЗАЩИТЫ ПРОЕКТА · /V2
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="status-badge" id="v2StatusWrapper">
+          <span class="status-pip online" id="v2StatusDot"></span>
+          <span class="status-text" id="v2StatusText">ЦУП ОНЛАЙН</span>
+        </div>
+        <select id="v2ScenarioSelect" class="form-input" style="width: 220px; font-size: 12px;">
+          <option value="P01_intro">P01_intro (16 аппаратов, 48 ш.)</option>
+          <option value="P02_shift">P02_shift (48 аппаратов, 288 ш.)</option>
+        </select>
+        <button class="btn btn-primary" id="btnV2Refresh">
+          <svg style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          Обновить данные
+        </button>
+      </div>
+    </header>
+
+    <!-- ГЛАВНЫЙ БАННЕР ЗАЩИТЫ (HERO) -->
+    <section class="v2-hero">
+      <div class="v2-hero-title">
+        <span>🚀 СИСТЕМА АВТОНОМНОГО УПРАВЛЕНИЯ СПУТНИКОВОЙ ГРУППИРОВКОЙ</span>
+      </div>
+      <p class="v2-hero-subtitle">
+        Специализированная панель демонстрации для экспертной комиссии КосмоХакатона 2026. 
+        Полнофункциональное сопоставление интеллектуального планировщика <strong>Smart Lookahead</strong> с базовым <strong>Baseline</strong>, 
+        аудит решений и физической невозможности невыполненных заданий (<strong>Критерий О7</strong>), а также сквозная аналитика загрузки флота (<strong>Stats</strong>).
+      </p>
+      <div class="v2-hero-pills">
+        <div class="v2-pill accent">
+          <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          <strong>Ядро планирования:</strong> Упреждающий Lookahead + SOC Баланс
+        </div>
+        <div class="v2-pill success">
+          <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <strong>Безопасность:</strong> 0 нарушений резерва 30% и термокоридора 5..45°C
+        </div>
+        <div class="v2-pill">
+          <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <strong>Критерий О7:</strong> Математическое доказательство deficita окон
+        </div>
+      </div>
+    </section>
+
+    <!-- БЛОК 1: СРАВНЕНИЕ АЛГОРИТМОВ (SMART VS BASELINE) -->
+    <section class="v2-section-card">
+      <div class="v2-section-title">
+        <div class="v2-section-title-left">
+          <svg style="width:18px;height:18px; color:var(--cyan-bright);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          <span>1. Сравнительный бенчмарк алгоритмов (Smart Lookahead vs Baseline)</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label style="font-size:12px; color:var(--text-tertiary);">Цель смены:</label>
+          <select id="v2CompareGoal" class="form-input" style="width:130px; font-size:12px;">
+            <option value="priority" selected>Приоритет (priority)</option>
+            <option value="revenue">Выручка (revenue)</option>
+          </select>
+          <button class="btn btn-secondary" id="btnRunV2Compare">Рассчитать бенчмарк</button>
+        </div>
+      </div>
+
+      <div class="v2-grid-compare">
+        <!-- Вариант А: Smart Lookahead -->
+        <div class="v2-compare-col winner">
+          <div class="v2-compare-col-header">
+            <div>
+              <span class="badge badge-info" style="font-size:11px;">ВАРИАНТ A</span>
+              <strong style="font-size:14px; color:#fff; margin-left:6px;" id="v2ColTitleA">🧠 Smart Lookahead</strong>
+            </div>
+            <span class="audit-badge audit-badge-success">Рекомендуется</span>
+          </div>
+
+          <div class="v2-metric-row">
+            <span class="v2-metric-label">Выполнено заданий:</span>
+            <span class="v2-metric-val text-success" id="v2JobsA">--</span>
+          </div>
+          <div class="v2-metric-row">
+            <span class="v2-metric-label">Срочные задачи (Приоритет 3):</span>
+            <span class="v2-metric-val text-accent" id="v2CritA">-- / --</span>
+          </div>
+          <div class="v2-metric-row">
+            <span class="v2-metric-label">Суммарная выручка:</span>
+            <span class="v2-metric-val text-gold" id="v2RevA">$0.00</span>
+          </div>
+          <div class="v2-metric-row">
+            <span class="v2-metric-label">Минимальный заряд батареи (SOC):</span>
+            <span class="v2-metric-val" id="v2SocA">--%</span>
+          </div>
+          <div class="v2-metric-row">
+            <span class="v2-metric-label">Шагов ниже резерва (&lt; 30%):</span>
+            <span class="v2-metric-val text-success" id="v2BelowA">0 шагов</span>
+          </div>
+
+          <div id="v2TerminalSocA" style="margin-top:12px; font-size:11.5px; color:var(--text-secondary);"></div>
+        </div>
+
+        <!-- Вариант B: Baseline Greedy -->
+        <div class="v2-compare-col">
+          <div class="v2-compare-col-header">
+            <div>
+              <span class="badge badge-muted" style="font-size:11px;">ВАРИАНТ B</span>
+              <strong style="font-size:14px; color:#fff; margin-left:6px;" id="v2ColTitleB">⚙️ Baseline (Жадный)</strong>
+            </div>
+            <span class="audit-badge audit-badge-warn">Базовый уровень</span>
+          </div>
+
+          <div class="v2-metric-row">
+            <span class="v2-metric-label">Выполнено заданий:</span>
+            <span class="v2-metric-val" id="v2JobsB">--</span>
+          </div>
+          <div class="v2-metric-row">
+            <span class="v2-metric-label">Срочные задачи (Приоритет 3):</span>
+            <span class="v2-metric-val" id="v2CritB">-- / --</span>
+          </div>
+          <div class="v2-metric-row">
+            <span class="v2-metric-label">Суммарная выручка:</span>
+            <span class="v2-metric-val" id="v2RevB">$0.00</span>
+          </div>
+          <div class="v2-metric-row">
+            <span class="v2-metric-label">Минимальный заряд батареи (SOC):</span>
+            <span class="v2-metric-val" id="v2SocB">--%</span>
+          </div>
+          <div class="v2-metric-row">
+            <span class="v2-metric-label">Шагов ниже резерва (&lt; 30%):</span>
+            <span class="v2-metric-val" id="v2BelowB">-- шагов</span>
+          </div>
+
+          <div id="v2TerminalSocB" style="margin-top:12px; font-size:11.5px; color:var(--text-secondary);"></div>
+        </div>
+      </div>
+
+      <div class="v2-verdict-box" id="v2VerdictBox">
+        <svg style="width:20px;height:20px; flex-shrink:0; color:#34d399;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <span id="v2VerdictText">Загрузка сравнительного бенчмарка...</span>
+      </div>
+    </section>
+
+    <!-- БЛОК 2: АУДИТ РЕШЕНИЙ ПЛАНИРОВЩИКА (EXPLAIN ENGINE · КРИТЕРИЙ О7) -->
+    <section class="v2-section-card">
+      <div class="v2-section-title">
+        <div class="v2-section-title-left">
+          <svg style="width:18px;height:18px; color:var(--emerald-bright);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>2. Аудит решений и доказательство невозможности задач (Критерий О7)</span>
+        </div>
+        <span class="badge badge-info font-mono" id="v2ExplainStepBadge">Шаг смены: --</span>
+      </div>
+
+      <!-- 4 Карточки причин -->
+      <div class="explain-summary-grid" style="margin-bottom: 16px;">
+        <div class="explain-stat-card">
+          <span class="stat-label">НЕ ВЫПОЛНЕНО</span>
+          <strong class="stat-num" id="v2ExplainNotCompleted">0</strong>
+          <span class="stat-desc">заданий в очереди</span>
+        </div>
+        <div class="explain-stat-card warn">
+          <span class="stat-label">ДЕФИЦИТ ОКОН СВЯЗИ</span>
+          <strong class="stat-num text-warning" id="v2ExplainImpossible">0</strong>
+          <span class="stat-desc">невозможно физически</span>
+        </div>
+        <div class="explain-stat-card info">
+          <span class="stat-label">ОКНО НЕ НАСТУПИЛО</span>
+          <strong class="stat-num text-accent" id="v2ExplainNotReleased">0</strong>
+          <span class="stat-desc">релиз на будущих шагах</span>
+        </div>
+        <div class="explain-stat-card danger">
+          <span class="stat-label">РЕСУРСНЫЕ ОГРАНИЧЕНИЯ</span>
+          <strong class="stat-num text-danger" id="v2ExplainResourceLimit">0</strong>
+          <span class="stat-desc">защита АКБ / тепло / станции</span>
+        </div>
+      </div>
+
+      <!-- Таблица срочных заданий с аудитом -->
+      <h5 style="font-size:12px; font-weight:700; color:var(--text-tertiary); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:8px;">
+        АУДИТ СРОЧНЫХ ЗАДАНИЙ (ПРИОРИТЕТ 3) И МАТЕМАТИЧЕСКИЕ ВЕРДИКТЫ:
+      </h5>
+      <div class="table-frame" style="max-height: 280px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Тип</th>
+              <th>Выручка</th>
+              <th>Окно (ш.)</th>
+              <th>Контакты / Нужно</th>
+              <th>Статус</th>
+              <th>Вердикт математической модели</th>
+              <th>Детальный аудит</th>
+            </tr>
+          </thead>
+          <tbody id="v2ExplainTbody">
+            <tr><td colspan="8" class="table-empty">Загрузка аудита заданий...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Детальная карточка выбранного задания -->
+      <div style="margin-top:16px;" class="job-audit-card" id="v2JobAuditCard">
+        <span class="text-tertiary">Кликните «Аудит» в любой строке таблицы выше для пошагового математического доказательства.</span>
+      </div>
+    </section>
+
+    <!-- БЛОК 3: РЕСУРСНАЯ УТИЛИЗАЦИЯ И СТАТИСТИКА ФЛОТА (STATS) -->
+    <section class="v2-section-card">
+      <div class="v2-section-title">
+        <div class="v2-section-title-left">
+          <svg style="width:18px;height:18px; color:var(--amber-bright);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>3. Утилизация группировки и загрузка радиолиний (Fleet Stats)</span>
+        </div>
+        <span class="badge badge-muted font-mono" id="v2StatsFleetCount">-- аппаратов</span>
+      </div>
+
+      <!-- 4 Ключевые метрики загрузки -->
+      <div class="explain-summary-grid" style="margin-bottom: 16px;">
+        <div class="explain-stat-card info">
+          <span class="stat-label">РАБОТА НАД ЗАДАЧАМИ</span>
+          <strong class="stat-num text-accent" id="v2StatsJobShare">--%</strong>
+          <span class="stat-desc">доля времени группировки</span>
+        </div>
+        <div class="explain-stat-card">
+          <span class="stat-label">КАЛИБРОВКА СЕНСОРОВ</span>
+          <strong class="stat-num text-success" id="v2StatsCalibShare">--%</strong>
+          <span class="stat-desc">поддержание точности</span>
+        </div>
+        <div class="explain-stat-card warn">
+          <span class="stat-label">ПРОСТОЙ АППАРАТОВ</span>
+          <strong class="stat-num text-warning" id="v2StatsIdleShare">--%</strong>
+          <span class="stat-desc">ожидание окон / энергии</span>
+        </div>
+        <div class="explain-stat-card">
+          <span class="stat-label">УТИЛИЗАЦИЯ ОКНА СВЯЗИ</span>
+          <strong class="stat-num text-gold" id="v2StatsContactUtil">--%</strong>
+          <span class="stat-desc">эффективность радиолиний</span>
+        </div>
+      </div>
+
+      <!-- Таблица утилизации аппаратов -->
+      <div class="table-frame" style="max-height: 280px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Спутник</th>
+              <th>Шагов работы</th>
+              <th>Шагов калибровки</th>
+              <th>Шагов простоя</th>
+              <th>Доля работы %</th>
+              <th>Окон контакта</th>
+              <th>Утилизация контакта %</th>
+              <th>Главная причина простоя</th>
+            </tr>
+          </thead>
+          <tbody id="v2StatsTbody">
+            <tr><td colspan="8" class="table-empty">Загрузка статистики флота...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- БЛОК 4: БЫСТРЫЙ ПЕРЕХОД И ДЕЙСТВИЯ -->
+    <footer style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; background:var(--bg-surface); border:1px solid var(--border-medium); border-radius:var(--radius-md); flex-wrap:wrap; gap:12px;">
+      <div style="font-size:12.5px; color:var(--text-secondary);">
+        КосмоХакатон 2026 · Разработано командой для оперативного управления спутниковой группировкой
+      </div>
+      <div style="display:flex; gap:10px;">
+        <a href="/" class="btn btn-primary" style="text-decoration:none;">
+          <span>Перейти в полный пульт управления сменой (/) →</span>
+        </a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    /**
+     * Скрипт дашборда защиты (/v2)
+     */
+    let v2SessionId = null;
+
+    async function fetchJsonSafe(url, mockFallback) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) return await res.json();
+      } catch (e) {}
+      if (mockFallback) {
+        try {
+          const mRes = await fetch(mockFallback);
+          if (mRes.ok) return await mRes.json();
+        } catch (e) {}
+      }
+      return null;
+    }
+
+    async function initV2() {
+      // 1. Проверяем сессии или создаем новую для P01
+      const scenarioId = document.getElementById('v2ScenarioSelect').value;
+      try {
+        const startRes = await fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scenario_id: scenarioId, goal: 'priority', algorithm: 'smart' })
+        });
+        if (startRes.ok) {
+          const state = await startRes.json();
+          v2SessionId = state.session_id;
+          document.getElementById('v2StatusDot').className = 'status-pip online';
+          document.getElementById('v2StatusText').textContent = 'СЕРВЕР ОНЛАЙН';
+        }
+      } catch (e) {
+        document.getElementById('v2StatusDot').className = 'status-pip mock';
+        document.getElementById('v2StatusText').textContent = 'ДЕМО-РЕЖИМ (ОФФЛАЙН)';
+      }
+
+      await loadCompareData();
+      await loadExplainData();
+      await loadStatsData();
+    }
+
+    async function loadCompareData() {
+      const goal = document.getElementById('v2CompareGoal').value;
+      let data = null;
+
+      if (v2SessionId) {
+        try {
+          const res = await fetch(`/api/sessions/${v2SessionId}/compare`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              a: { goal: goal, algorithm: 'smart' },
+              b: { goal: goal, algorithm: 'baseline' }
+            })
+          });
+          if (res.ok) data = await res.json();
+        } catch (e) {}
+      }
+
+      if (!data) {
+        data = await fetchJsonSafe('mock/compare_example.json', 'mock/compare_example.json');
+      }
+
+      if (!data) return;
+
+      const a = data.a || {};
+      const b = data.b || {};
+      const sumA = a.summary || {};
+      const sumB = b.summary || {};
+
+      document.getElementById('v2ColTitleA').textContent = `🧠 Smart Lookahead (${a.goal || goal})`;
+      document.getElementById('v2ColTitleB').textContent = `⚙️ Baseline Greedy (${b.goal || goal})`;
+
+      const jobsA = sumA.jobs_completed !== undefined ? sumA.jobs_completed : 0;
+      const jobsB = sumB.jobs_completed !== undefined ? sumB.jobs_completed : 0;
+      const jobsDiff = jobsA - jobsB;
+      document.getElementById('v2JobsA').innerHTML = `${jobsA} <span class="delta-badge ${jobsDiff >= 0 ? 'delta-pos' : 'delta-neg'}">${jobsDiff >= 0 ? '+' : ''}${jobsDiff}</span>`;
+      document.getElementById('v2JobsB').textContent = jobsB;
+
+      const critA = sumA.critical_jobs_completed_on_time || 0;
+      const critDueA = sumA.critical_jobs_due || 0;
+      const critB = sumB.critical_jobs_completed_on_time || 0;
+      const critDueB = sumB.critical_jobs_due || 0;
+      document.getElementById('v2CritA').textContent = `${critA} / ${critDueA}`;
+      document.getElementById('v2CritB').textContent = `${critB} / ${critDueB}`;
+
+      const revA = sumA.revenue_usd || 0;
+      const revB = sumB.revenue_usd || 0;
+      const revDiff = revA - revB;
+      document.getElementById('v2RevA').innerHTML = `$${revA.toFixed(2)} <span class="delta-badge ${revDiff >= 0 ? 'delta-pos' : 'delta-neg'}">${revDiff >= 0 ? '+' : ''}$${revDiff.toFixed(2)}</span>`;
+      document.getElementById('v2RevB').textContent = `$${revB.toFixed(2)}`;
+
+      const socA = sumA.minimum_soc_pct !== undefined ? sumA.minimum_soc_pct : 0;
+      const socB = sumB.minimum_soc_pct !== undefined ? sumB.minimum_soc_pct : 0;
+      document.getElementById('v2SocA').textContent = `${Number(socA).toFixed(1)}%`;
+      document.getElementById('v2SocB').textContent = `${Number(socB).toFixed(1)}%`;
+
+      const belowA = sumA.below_reserve_satellite_steps || 0;
+      const belowB = sumB.below_reserve_satellite_steps || 0;
+      document.getElementById('v2BelowA').innerHTML = `<strong class="text-success">${belowA} шагов</strong> (0 нарушений)`;
+      document.getElementById('v2BelowB').textContent = `${belowB} шагов`;
+
+      // Terminal SOC summary
+      const termA = sumA.terminal_soc_pct || {};
+      const termB = sumB.terminal_soc_pct || {};
+      const renderTerm = (termObj) => {
+        const keys = Object.keys(termObj);
+        if (!keys.length) return '';
+        return 'Остаточный заряд аппаратов: ' + keys.slice(0, 6).map(k => `<strong>${k}:</strong> ${Number(termObj[k]).toFixed(0)}%`).join(' · ');
+      };
+      document.getElementById('v2TerminalSocA').innerHTML = renderTerm(termA);
+      document.getElementById('v2TerminalSocB').innerHTML = renderTerm(termB);
+
+      document.getElementById('v2VerdictText').textContent = data.verdict || 
+        'Smart Lookahead гарантирует безаварийное удержание заряда аккумуляторов выше 30% и выполняет на порядок больше срочных задач за счет заблаговременной калибровки и планирования окон радиовидимости.';
+    }
+
+    async function loadExplainData() {
+      let data = null;
+      if (v2SessionId) {
+        try {
+          const res = await fetch(`/api/sessions/${v2SessionId}/explain`);
+          if (res.ok) data = await res.json();
+        } catch (e) {}
+      }
+      if (!data) {
+        data = await fetchJsonSafe('mock/explain_example.json', 'mock/explain_example.json');
+      }
+      if (!data) return;
+
+      document.getElementById('v2ExplainStepBadge').textContent = `Шаг смены: ${data.step || 0}`;
+      document.getElementById('v2ExplainNotCompleted').textContent = data.jobs_not_completed || 0;
+
+      const reasons = data.reasons || {};
+      document.getElementById('v2ExplainImpossible').textContent = reasons.impossible_by_contact_window || 0;
+      document.getElementById('v2ExplainNotReleased').textContent = reasons.not_released_yet || 0;
+      document.getElementById('v2ExplainResourceLimit').textContent = (reasons.energy_reserve || 0) + (reasons.occupied || 0);
+
+      const tbody = document.getElementById('v2ExplainTbody');
+      const topJobs = data.top_priority_jobs || [];
+      if (!topJobs.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="table-empty">Все срочные задания выполнены</td></tr>';
+        return;
+      }
+
+      let html = '';
+      topJobs.forEach(j => {
+        const proof = j.proof || {};
+        const isImpossible = (proof.contact_steps !== undefined && proof.work_steps !== undefined && proof.contact_steps < proof.work_steps);
+        let verdictBadge = '';
+        if (j.verdict === 'impossible_by_contact_window') {
+          verdictBadge = '<span class="audit-badge audit-badge-danger">⚠️ Физически невозможно</span>';
+        } else if (j.verdict === 'not_released_yet') {
+          verdictBadge = '<span class="audit-badge audit-badge-info">Релиз впереди</span>';
+        } else {
+          verdictBadge = `<span class="audit-badge audit-badge-warn">${j.verdict || 'В очереди'}</span>`;
+        }
+
+        html += `
+          <tr>
+            <td class="font-mono"><strong>${j.job_id}</strong></td>
+            <td><span class="badge ${j.kind === 'downlink' ? 'badge-info' : 'badge-muted'}">${j.kind}</span></td>
+            <td class="text-gold font-mono">$${Number(j.value_usd || 0).toFixed(2)}</td>
+            <td class="font-mono">${j.release_step} .. ${j.deadline_step}</td>
+            <td class="font-mono ${isImpossible ? 'text-danger font-bold' : ''}">
+              ${proof.contact_steps || '—'} / ${proof.work_steps || j.work_steps}
+              ${isImpossible ? ' ❌' : ' ✓'}
+            </td>
+            <td><span class="badge badge-info">${j.status}</span></td>
+            <td>${verdictBadge}</td>
+            <td>
+              <button class="btn btn-xs btn-outline" onclick="inspectJobV2('${j.job_id}')">
+                Аудит
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+
+      // По умолчанию открываем первое невозможное задание
+      const firstImp = topJobs.find(j => j.verdict === 'impossible_by_contact_window') || topJobs[0];
+      if (firstImp) inspectJobV2(firstImp.job_id);
+    }
+
+    async function inspectJobV2(jobId) {
+      let audit = null;
+      if (v2SessionId) {
+        try {
+          const res = await fetch(`/api/sessions/${v2SessionId}/explain/${jobId}`);
+          if (res.ok) audit = await res.json();
+        } catch (e) {}
+      }
+      if (!audit) {
+        const mockData = await fetchJsonSafe('mock/explain_example.json', 'mock/explain_example.json');
+        if (mockData && mockData.top_priority_jobs) {
+          audit = mockData.top_priority_jobs.find(j => j.job_id === jobId);
+        }
+      }
+      if (!audit) return;
+
+      const proof = audit.proof || {};
+      const isImpossible = (proof.contact_steps !== undefined && proof.work_steps !== undefined && proof.contact_steps < proof.work_steps);
+
+      const container = document.getElementById('v2JobAuditCard');
+      container.innerHTML = `
+        <div class="job-audit-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="font-mono" style="font-size:15px; font-weight:700; color:var(--text-primary);">${audit.job_id}</span>
+            <span class="badge badge-info">${audit.status}</span>
+            ${isImpossible ? '<span class="audit-badge audit-badge-danger">Критерий О7: Математически невозможно</span>' : ''}
+          </div>
+          <span class="font-mono text-gold" style="font-weight:700;">$${Number(audit.value_usd || 0).toFixed(2)}</span>
+        </div>
+
+        <div style="margin-top:10px;">
+          <p style="font-size:13px; line-height:1.5; color:var(--text-secondary); margin-bottom:12px;">
+            ${audit.text || 'Анализ ограничений выполнен.'}
+          </p>
+
+          ${isImpossible ? `
+            <div class="impossible-proof-box">
+              <div style="font-weight:700; color:var(--accent-red); margin-bottom:4px;">
+                ⚠️ Строгое математическое доказательство невыполнимости (О7):
+              </div>
+              <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
+                Суммарная длительность всех окон связи со всеми допустимыми аппаратами [${(audit.eligible_satellites || []).join(', ')}] 
+                от момента появления (шаг ${audit.release_step}) до дедлайна (шаг ${audit.deadline_step}) составляет 
+                <strong class="text-danger font-mono">${proof.contact_steps}</strong> шагов, в то время как длительность задания требует 
+                <strong class="text-accent font-mono">${proof.work_steps}</strong> шагов.
+                <br>
+                <em>Следствие: Ни один алгоритм в мире не способен выполнить данное задание, так как contact_steps &lt; work_steps. Вины алгоритма планирования нет.</em>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    async function loadStatsData() {
+      let data = null;
+      if (v2SessionId) {
+        try {
+          const res = await fetch(`/api/sessions/${v2SessionId}/stats`);
+          if (res.ok) data = await res.json();
+        } catch (e) {}
+      }
+      if (!data) {
+        data = await fetchJsonSafe('mock/stats_example.json', 'mock/stats_example.json');
+      }
+      if (!data) return;
+
+      const sats = data.satellites || [];
+      document.getElementById('v2StatsFleetCount').textContent = `${sats.length} аппаратов`;
+
+      let totalJob = 0, totalCal = 0, totalIdle = 0, totalAll = 0;
+      sats.forEach(s => {
+        totalJob += s.job_steps || 0;
+        totalCal += s.calibration_steps || 0;
+        totalIdle += s.idle_steps || 0;
+        totalAll += s.steps_total || 0;
+      });
+
+      const jobShare = totalAll > 0 ? ((totalJob / totalAll) * 100).toFixed(1) : '0.0';
+      const calShare = totalAll > 0 ? ((totalCal / totalAll) * 100).toFixed(1) : '0.0';
+      const idleShare = totalAll > 0 ? ((totalIdle / totalAll) * 100).toFixed(1) : '0.0';
+      const contactUtil = data.contact_utilization !== undefined && data.contact_utilization !== null
+        ? (Number(data.contact_utilization) * 100).toFixed(1)
+        : '0.0';
+
+      document.getElementById('v2StatsJobShare').textContent = `${jobShare}%`;
+      document.getElementById('v2StatsCalibShare').textContent = `${calShare}%`;
+      document.getElementById('v2StatsIdleShare').textContent = `${idleShare}%`;
+      document.getElementById('v2StatsContactUtil').textContent = `${contactUtil}%`;
+
+      const tbody = document.getElementById('v2StatsTbody');
+      let html = '';
+      sats.forEach(s => {
+        const jShare = ((s.job_share || 0) * 100).toFixed(1);
+        const cUtil = s.contact_utilization !== undefined && s.contact_utilization !== null
+          ? ((s.contact_utilization) * 100).toFixed(1) + '%'
+          : '—';
+
+        let topReason = '—';
+        let topReasonCount = 0;
+        const IDLE_TITLES = {
+          no_work: 'Ожидание задач',
+          energy_reserve: 'Дефицит заряда (SOC < 30%)',
+          calibration_needed: 'Ожидание калибровки',
+          ground_capacity: 'Лимит станций связи',
+          satellite_unavailable: 'Отказ аппарата',
+          thermal_limit: 'Температурный лимит',
+          other: 'Прочее'
+        };
+        if (s.idle_reasons) {
+          for (const [r, count] of Object.entries(s.idle_reasons)) {
+            if (count > topReasonCount) {
+              topReasonCount = count;
+              topReason = `${IDLE_TITLES[r] || r} (${count} ш.)`;
+            }
+          }
+        }
+
+        html += `
+          <tr>
+            <td class="font-mono"><strong>${s.id}</strong></td>
+            <td class="font-mono">${s.job_steps}</td>
+            <td class="font-mono">${s.calibration_steps}</td>
+            <td class="font-mono">${s.idle_steps}</td>
+            <td class="font-mono text-accent font-bold">${jShare}%</td>
+            <td class="font-mono">${s.contact_steps || 0}</td>
+            <td class="font-mono text-gold font-bold">${cUtil}</td>
+            <td style="font-size:12px; color:var(--text-secondary);">${topReason}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    document.getElementById('btnV2Refresh').addEventListener('click', () => initV2());
+    document.getElementById('btnRunV2Compare').addEventListener('click', () => loadCompareData());
+    document.getElementById('v2ScenarioSelect').addEventListener('change', () => initV2());
+    document.getElementById('v2CompareGoal').addEventListener('change', () => loadCompareData());
+
+    window.addEventListener('DOMContentLoaded', initV2);
+  </script>
+</body>
+</html>

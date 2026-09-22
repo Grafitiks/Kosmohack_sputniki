@@ -1,0 +1,254 @@
+{
+ "step": 120,
+ "jobs_not_completed": 711,
+ "reasons": {
+  "on_track": 16,
+  "not_released_yet": 646,
+  "impossible_by_contact_window": 44,
+  "occupied": 5
+ },
+ "top_priority_jobs": [
+  {
+   "job_id": "JOB-0710",
+   "kind": "relay",
+   "priority": 3,
+   "value_usd": 74.97,
+   "release_step": 120,
+   "deadline_step": 125,
+   "work_steps": 3,
+   "eligible_satellites": [
+    "S44",
+    "S13",
+    "S34"
+   ],
+   "status": "in_progress",
+   "verdict": "not_released_yet",
+   "text": "Задание ещё не открылось, окно начнётся на шаге 120.",
+   "proof": {
+    "work_steps": 3,
+    "contact_steps": 5
+   },
+   "lost_steps_by_reason": {},
+   "main_reason": null,
+   "wasted_progress_steps": 0
+  },
+  {
+   "job_id": "JOB-0747",
+   "kind": "relay",
+   "priority": 3,
+   "value_usd": 74.97,
+   "release_step": 134,
+   "deadline_step": 143,
+   "work_steps": 3,
+   "eligible_satellites": [
+    "S27",
+    "S05",
+    "S30"
+   ],
+   "status": "in_progress",
+   "verdict": "not_released_yet",
+   "text": "Задание ещё не открылось, окно начнётся на шаге 134.",
+   "proof": {
+    "work_steps": 3,
+    "contact_steps": 9
+   },
+   "lost_steps_by_reason": {},
+   "main_reason": null,
+   "wasted_progress_steps": 0
+  },
+  {
+   "job_id": "JOB-0834",
+   "kind": "relay",
+   "priority": 3,
+   "value_usd": 74.97,
+   "release_step": 162,
+   "deadline_step": 168,
+   "work_steps": 3,
+   "eligible_satellites": [
+    "S06",
+    "S10",
+    "S02",
+    "S34"
+   ],
+   "status": "in_progress",
+   "verdict": "not_released_yet",
+   "text": "Задание ещё не открылось, окно начнётся на шаге 162.",
+   "proof": {
+    "work_steps": 3,
+    "contact_steps": 6
+   },
+   "lost_steps_by_reason": {},
+   "main_reason": null,
+   "wasted_progress_steps": 0
+  },
+  {
+   "job_id": "JOB-0855",
+   "kind": "relay",
+   "priority": 3,
+   "value_usd": 74.97,
+   "release_step": 170,
+   "deadline_step": 181,
+   "work_steps": 3,
+   "eligible_satellites": [
+    "S46",
+    "S02",
+    "S32"
+   ],
+   "status": "in_progress",
+   "verdict": "not_released_yet",
+   "text": "Задание ещё не открылось, окно начнётся на шаге 170.",
+   "proof": {
+    "work_steps": 3,
+    "contact_steps": 11
+   },
+   "lost_steps_by_reason": {},
+   "main_reason": null,
+   "wasted_progress_steps": 0
+  },
+  {
+   "job_id": "JOB-0999",
+   "kind": "relay",
+   "priority": 3,
+   "value_usd": 74.97,
+   "release_step": 218,
+   "deadline_step": 223,
+   "work_steps": 3,
+   "eligible_satellites": [
+    "S13",
+    "S30",
+    "S36",
+    "S21"
+   ],
+   "status": "in_progress",
+   "verdict": "not_released_yet",
+   "text": "Задание ещё не открылось, окно начнётся на шаге 218.",
+   "proof": {
+    "work_steps": 3,
+    "contact_steps": 5
+   },
+   "lost_steps_by_reason": {},
+   "main_reason": null,
+   "wasted_progress_steps": 0
+  },
+  {
+   "job_id": "JOB-1021",
+   "kind": "relay",
+   "priority": 3,
+   "value_usd": 74.97,
+   "release_step": 224,
+   "deadline_step": 230,
+   "work_steps": 3,
+   "eligible_satellites": [
+    "S08",
+    "S15",
+    "S36",
+    "S47"
+   ],
+   "status": "in_progress",
+   "verdict": "not_released_yet",
+   "text": "Задание ещё не открылось, окно начнётся на шаге 224.",
+   "proof": {
+    "work_steps": 3,
+    "contact_steps": 5
+   },
+   "lost_steps_by_reason": {},
+   "main_reason": null,
+   "wasted_progress_steps": 0
+  },
+  {
+   "job_id": "JOB-1087",
+   "kind": "relay",
+   "priority": 3,
+   "value_usd": 74.97,
+   "release_step": 246,
+   "deadline_step": 258,
+   "work_steps": 3,
+   "eligible_satellites": [
+    "S37",
+    "S24",
+    "S33",
+    "S30"
+   ],
+   "status": "in_progress",
+   "verdict": "not_released_yet",
+   "text": "Задание ещё не открылось, окно начнётся на шаге 246.",
+   "proof": {
+    "work_steps": 3,
+    "contact_steps": 12
+   },
+   "lost_steps_by_reason": {},
+   "main_reason": null,
+   "wasted_progress_steps": 0
+  },
+  {
+   "job_id": "JOB-1140",
+   "kind": "relay",
+   "priority": 3,
+   "value_usd": 74.97,
+   "release_step": 264,
+   "deadline_step": 275,
+   "work_steps": 3,
+   "eligible_satellites": [
+    "S48",
+    "S06",
+    "S22",
+    "S18"
+   ],
+   "status": "in_progress",
+   "verdict": "not_released_yet",
+   "text": "Задание ещё не открылось, окно начнётся на шаге 264.",
+   "proof": {
+    "work_steps": 3,
+    "contact_steps": 11
+   },
+   "lost_steps_by_reason": {},
+   "main_reason": null,
+   "wasted_progress_steps": 0
+  },
+  {
+   "job_id": "JOB-1143",
+   "kind": "relay",
+   "priority": 3,
+   "value_usd": 74.97,
+   "release_step": 266,
+   "deadline_step": 278,
+   "work_steps": 3,
+   "eligible_satellites": [
+    "S17",
+    "S40"
+   ],
+   "status": "in_progress",
+   "verdict": "not_released_yet",
+   "text": "Задание ещё не открылось, окно начнётся на шаге 266.",
+   "proof": {
+    "work_steps": 3,
+    "contact_steps": 12
+   },
+   "lost_steps_by_reason": {},
+   "main_reason": null,
+   "wasted_progress_steps": 0
+  },
+  {
+   "job_id": "JOB-0105",
+   "kind": "downlink",
+   "priority": 3,
+   "value_usd": 49.98,
+   "release_step": 250,
+   "deadline_step": 262,
+   "work_steps": 2,
+   "eligible_satellites": [
+    "S15"
+   ],
+   "status": "in_progress",
+   "verdict": "not_released_yet",
+   "text": "Задание ещё не открылось, окно начнётся на шаге 250.",
+   "proof": {
+    "work_steps": 2,
+    "contact_steps": 2
+   },
+   "lost_steps_by_reason": {},
+   "main_reason": null,
+   "wasted_progress_steps": 0
+  }
+ ]
+}
