@@ -2,13 +2,52 @@
  * КИНЕМАТОГРАФИЧНЫЙ 3D ГЛОБУС ЗЕМЛИ И ОРБИТАЛЬНОЙ ГРУППИРОВКИ (3D Mission Globe)
  * КосмоХакатон 2026 — Аэрокосмический интерфейс ЦУП
  * 
- * Технологический стек:
- * - Three.js WebGL Engine (локальный бандл app/static/vendor/three.min.js)
- * - Процедурная текстура Земли с кибер-континентами и атмосферой
- * - Реалистичные 3D модели спутников с солнечными батареями и витками орбит
- * - Лазерные лучи и фотонные частицы при сбросе данных (downlink) и ретрансляции (relay)
- * - Интерактивное вращение мышью (360°), плавный зум и клик для открытия авионики
+ * Особенности:
+ * 1. 100% автономный Three.js WebGL (работает без интернета из локального бандла)
+ * 2. Все 16 аппаратов (S01..S16) сразу в воздухе на 4 наклонных орбитах ССО
+ * 3. Непрерывный физический полёт в 60 FPS (спутники плавно летят по орбитам в реальном времени)
+ * 4. Наземные станции приема (ППИ-1 Дубна и ППИ-2 Восточный) на поверхности Земли
+ * 5. Текстовые 3D-бейджи станций и аппаратов (исключают путаницу между ППИ и спутниками)
+ * 6. Динамические лазерные лучи с фотонами при Downlink и межспутниковом Relay
+ * 7. Интерактивное вращение 360°, зум и клик для открытия приборного щита авионики
  */
+
+// Векторные полигоны континентов для процедурной текстуры Земли
+const GLOBE_CONTINENTS = [
+  // Евразия
+  [
+    [-9, 36], [-5, 43], [2, 51], [8, 55], [10, 58], [25, 71], [35, 70], [60, 70],
+    [80, 75], [105, 78], [140, 75], [170, 68], [190-360, 66], [162, 55], [143, 50],
+    [130, 42], [122, 30], [108, 18], [104, 10], [98, 4], [80, 8], [70, 22], [50, 26],
+    [43, 13], [35, 30], [26, 40], [15, 38], [10, 44], [-4, 37], [-9, 36]
+  ],
+  // Африка
+  [
+    [-17, 15], [-5, 36], [11, 37], [32, 31], [44, 12], [51, 10], [40, -10],
+    [32, -28], [18, -34], [12, -18], [8, 4], [-15, 11], [-17, 15]
+  ],
+  // Северная Америка
+  [
+    [-168, 66], [-140, 70], [-120, 76], [-80, 75], [-60, 60], [-55, 48],
+    [-70, 42], [-80, 25], [-97, 20], [-80, 8], [-90, 14], [-105, 23],
+    [-118, 33], [-124, 48], [-140, 60], [-168, 66]
+  ],
+  // Южная Америка
+  [
+    [-75, 10], [-50, 0], [-35, -5], [-40, -22], [-55, -35], [-68, -55],
+    [-75, -45], [-72, -30], [-80, -5], [-75, 10]
+  ],
+  // Австралия
+  [
+    [114, -22], [130, -12], [145, -15], [153, -28], [148, -38], [135, -35],
+    [118, -35], [114, -22]
+  ],
+  // Антарктида
+  [
+    [-180, -70], [-120, -73], [-60, -65], [0, -68], [60, -67], [120, -65],
+    [180, -70], [180, -90], [-180, -90], [-180, -70]
+  ]
+];
 
 class Globe3D {
   constructor(containerId) {
@@ -18,19 +57,23 @@ class Globe3D {
     this.scene = null;
     this.camera = null;
     this.renderer = null;
-    this.earthGroup = null;
+
+    // Иерархия сцены
+    this.worldGroup = null;        // Вращается мышью и общим авто-вращением
+    this.earthSpinGroup = null;    // Вращение Земли вокруг своей оси (суточное вращение)
     this.earthMesh = null;
     this.atmosphereMesh = null;
-
-    this.satellitesGroup = null;
-    this.orbitRingsGroup = null;
-    this.effectsGroup = null;
     this.groundStationsGroup = null;
 
-    this.satObjects = new Map(); // satId -> { group, mesh, satData, orbitData }
+    this.spaceGroup = null;        // Инерциальное пространство для орбит и спутников
+    this.orbitRingsGroup = null;
+    this.satellitesGroup = null;
+    this.effectsGroup = null;
+
+    this.satObjects = new Map();   // satId -> { group, mesh, badgeSprite, anomaly, speed, ... }
     this.groundStationObjects = [];
 
-    // Состояние управления камерой (Damped Orbit Controls)
+    // Управление камерой и вращением
     this.isDragging = false;
     this.previousMousePosition = { x: 0, y: 0 };
     this.targetRotation = { x: 0.35, y: -0.6 };
@@ -38,6 +81,10 @@ class Globe3D {
     this.targetDistance = 3.6;
     this.currentDistance = 3.6;
     this.autoRotate = true;
+
+    // Скорость полёта спутников в реальном времени
+    this.isFlightRunning = true;
+    this.flightSpeedMultiplier = 1.0;
 
     // Raycaster для интерактивности
     this.raycaster = new THREE.Raycaster();
@@ -47,41 +94,40 @@ class Globe3D {
 
     // Анимационные параметры
     this.clock = new THREE.Clock();
-    this.activeLinks = []; // { beam, particles, fromPos, toPos, type }
+    this.activeLinks = []; // { from, to, points, line, type, offset }
 
     this.init();
   }
 
   init() {
     if (typeof THREE === 'undefined') {
-      console.warn('Three.js не загружен, ожидаем бандл...');
+      console.warn('Three.js не загружен, ожидаем инициализацию...');
       return;
     }
 
     const width = this.container.clientWidth || 800;
     const height = this.container.clientHeight || 480;
 
-    // 1. Сцена и камера
+    // 1. Сцена и перспективная камера
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
     this.camera.position.set(0, 0, this.currentDistance);
 
-    // 2. Рендерер с антиалиасингом и высоким качеством
+    // 2. Рендерер WebGL
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.25;
 
-    // Очищаем контейнер и добавляем канвас
     this.container.innerHTML = '';
     this.container.appendChild(this.renderer.domElement);
 
-    // 3. Освещение
-    const ambientLight = new THREE.AmbientLight(0x1a2e4c, 1.4);
+    // 3. Освещение сцены
+    const ambientLight = new THREE.AmbientLight(0x1a2e4c, 1.5);
     this.scene.add(ambientLight);
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 2.2);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 2.4);
     sunLight.position.set(5, 3, 5);
     this.scene.add(sunLight);
 
@@ -89,31 +135,44 @@ class Globe3D {
     rimLight.position.set(-5, -2, -4);
     this.scene.add(rimLight);
 
-    // 4. Группа Земли
-    this.earthGroup = new THREE.Group();
-    this.scene.add(this.earthGroup);
+    // 4. Корневая группа мира (вращается оператором)
+    this.worldGroup = new THREE.Group();
+    this.scene.add(this.worldGroup);
+
+    // 5. Группа суточного вращения Земли
+    this.earthSpinGroup = new THREE.Group();
+    this.worldGroup.add(this.earthSpinGroup);
 
     this.buildEarth();
     this.buildAtmosphere();
     this.buildGroundStations();
 
-    // 5. Группы спутников и орбит
+    // 6. Инерциальное космическое пространство (орбиты и спутники)
+    this.spaceGroup = new THREE.Group();
+    this.worldGroup.add(this.spaceGroup);
+
     this.orbitRingsGroup = new THREE.Group();
-    this.earthGroup.add(this.orbitRingsGroup);
+    this.spaceGroup.add(this.orbitRingsGroup);
 
     this.satellitesGroup = new THREE.Group();
-    this.earthGroup.add(this.satellitesGroup);
+    this.spaceGroup.add(this.satellitesGroup);
 
     this.effectsGroup = new THREE.Group();
-    this.earthGroup.add(this.effectsGroup);
+    this.spaceGroup.add(this.effectsGroup);
 
-    // 6. События мыши и окна
+    // 7. Мгновенная инициализация всех 16 спутников группировки
+    this.setupSatellites();
+
+    // 8. Обработчики мыши и изменения размеров
     this.initInteraction();
     window.addEventListener('resize', () => this.onResize());
 
-    // 7. Запуск цикла анимации
+    // 9. Запуск 60 FPS цикла анимации
     this.animate = this.animate.bind(this);
     requestAnimationFrame(this.animate);
+
+    // 10. Первичная синхронизация с состоянием ЦУП
+    this.updateState();
   }
 
   onResize() {
@@ -126,7 +185,7 @@ class Globe3D {
   }
 
   /**
-   * Генерация процедурной текстуры Земли в стиле космического командного центра
+   * Генерация процедурной текстуры Земли с кибер-сеткой и материками
    */
   createEarthTexture() {
     const canvas = document.createElement('canvas');
@@ -134,12 +193,12 @@ class Globe3D {
     canvas.height = 1024;
     const ctx = canvas.getContext('2d');
 
-    // Базовый космический океан
+    // Глубокий космический океан
     ctx.fillStyle = '#030816';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Сетка параллелей и меридианов
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+    // Координатная сетка
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.09)';
     ctx.lineWidth = 1;
     for (let x = 0; x <= canvas.width; x += canvas.width / 24) {
       ctx.beginPath();
@@ -153,23 +212,16 @@ class Globe3D {
       ctx.lineTo(canvas.width, y);
       ctx.stroke();
     }
-    // Экватор
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+    // Линия экватора
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.28)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, canvas.height / 2);
     ctx.lineTo(canvas.width, canvas.height / 2);
     ctx.stroke();
 
-    // Отрисовка материков
-    const continents = window.WORLD_CONTINENTS || [
-      [[-9, 36], [2, 51], [25, 71], [80, 75], [140, 75], [162, 55], [122, 30], [98, 4], [50, 26], [10, 44], [-9, 36]],
-      [[-17, 15], [11, 37], [44, 12], [32, -28], [18, -34], [8, 4], [-17, 15]],
-      [[-168, 66], [-120, 76], [-60, 60], [-80, 25], [-118, 33], [-168, 66]],
-      [[-75, 10], [-35, -5], [-55, -35], [-75, -45], [-80, -5], [-75, 10]],
-      [[114, -22], [145, -15], [148, -38], [118, -35], [114, -22]]
-    ];
-
+    // Отрисовка контуров материков
+    const continents = GLOBE_CONTINENTS;
     ctx.fillStyle = '#0a172c';
     ctx.strokeStyle = '#38bdf8';
     ctx.lineWidth = 2.5;
@@ -187,11 +239,10 @@ class Globe3D {
       ctx.stroke();
     });
 
-    // Добавляем точечную матрицу по суше (Sci-Fi Grid Overlay)
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+    // Светящиеся узлы матрицы суши (Кибер-сетка)
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
     for (let x = 0; x < canvas.width; x += 16) {
       for (let y = 0; y < canvas.height; y += 16) {
-        // Проверяем цвет пикселя: если суша — ставим светящуюся точку
         const pixel = ctx.getImageData(x, y, 1, 1).data;
         if (pixel[0] > 6 && pixel[1] > 18) {
           ctx.fillRect(x, y, 2, 2);
@@ -206,7 +257,7 @@ class Globe3D {
   }
 
   /**
-   * Создание сферы Земли
+   * Построение сферы Земли
    */
   buildEarth() {
     const radius = 1.0;
@@ -222,11 +273,11 @@ class Globe3D {
     });
 
     this.earthMesh = new THREE.Mesh(geometry, material);
-    this.earthGroup.add(this.earthMesh);
+    this.earthSpinGroup.add(this.earthMesh);
   }
 
   /**
-   * Свечение атмосферы (Atmospheric Glow)
+   * Свечение атмосферы
    */
   buildAtmosphere() {
     const geometry = new THREE.SphereGeometry(1.035, 48, 36);
@@ -238,37 +289,37 @@ class Globe3D {
       blending: THREE.AdditiveBlending
     });
     this.atmosphereMesh = new THREE.Mesh(geometry, material);
-    this.earthGroup.add(this.atmosphereMesh);
+    this.earthSpinGroup.add(this.atmosphereMesh);
   }
 
   /**
-   * Наземные станции приема информации (ППИ) с кругами радиовидимости
+   * Наземные пункты приема информации (ППИ) с кругами радиовидимости и 3D-бейджами
    */
   buildGroundStations() {
     this.groundStationsGroup = new THREE.Group();
-    this.earthGroup.add(this.groundStationsGroup);
+    this.earthSpinGroup.add(this.groundStationsGroup);
 
     const stations = [
-      { id: 'GS-01', name: 'ППИ-1 (Дубна)', lat: 56.7, lon: 37.2, color: 0x38bdf8 },
-      { id: 'GS-02', name: 'ППИ-2 (Восточный)', lat: 51.8, lon: 128.3, color: 0x10b981 }
+      { id: 'GS-01', name: 'ППИ-1 (Дубна)', shortName: '📡 ППИ-1 Дубна', lat: 56.7, lon: 37.2, color: 0x38bdf8 },
+      { id: 'GS-02', name: 'ППИ-2 (Восточный)', shortName: '📡 ППИ-2 Восточный', lat: 51.8, lon: 128.3, color: 0x10b981 }
     ];
 
     stations.forEach(gs => {
       const pos = this.latLonToVector3(gs.lat, gs.lon, 1.002);
 
       // Антенна-маркер
-      const beaconGeo = new THREE.SphereGeometry(0.02, 16, 16);
+      const beaconGeo = new THREE.SphereGeometry(0.024, 16, 16);
       const beaconMat = new THREE.MeshBasicMaterial({ color: gs.color });
       const beaconMesh = new THREE.Mesh(beaconGeo, beaconMat);
       beaconMesh.position.copy(pos);
       this.groundStationsGroup.add(beaconMesh);
 
-      // Концентрические кольца зоны радиовидимости
-      const ringGeo = new THREE.RingGeometry(0.04, 0.24, 32);
+      // Кольцо радиовидимости
+      const ringGeo = new THREE.RingGeometry(0.04, 0.22, 32);
       const ringMat = new THREE.MeshBasicMaterial({
         color: gs.color,
         transparent: true,
-        opacity: 0.28,
+        opacity: 0.32,
         side: THREE.DoubleSide,
         blending: THREE.AdditiveBlending
       });
@@ -277,7 +328,12 @@ class Globe3D {
       ringMesh.lookAt(pos.clone().multiplyScalar(2));
       this.groundStationsGroup.add(ringMesh);
 
-      this.groundStationObjects.push({ gs, pos, beaconMesh, ringMesh });
+      // 3D Текстовый бейдж станции
+      const labelSprite = this.createBadgeSprite(gs.shortName, gs.color === 0x38bdf8 ? '#38bdf8' : '#10b981');
+      labelSprite.position.copy(pos.clone().multiplyScalar(1.12));
+      this.groundStationsGroup.add(labelSprite);
+
+      this.groundStationObjects.push({ gs, pos, beaconMesh, ringMesh, labelSprite });
     });
   }
 
@@ -291,66 +347,102 @@ class Globe3D {
   }
 
   /**
-   * Создание 3D модели спутника (Корпус + Панели солнечных батарей + Антенна)
+   * Создание текстового 3D-спрайта
+   */
+  createBadgeSprite(text, colorHex = '#38bdf8') {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = 'rgba(5, 12, 26, 0.88)';
+    ctx.strokeStyle = colorHex;
+    ctx.lineWidth = 2;
+    if (ctx.roundRect) ctx.roundRect(4, 4, 248, 56, 8);
+    else ctx.rect(4, 4, 248, 56);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = colorHex;
+    ctx.font = 'bold 22px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 128, 32);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(0.28, 0.07, 1);
+    return sprite;
+  }
+
+  /**
+   * Создание 3D модели космического аппарата
    */
   createSatelliteMesh(satId) {
     const satGroup = new THREE.Group();
 
-    // 1. Центральный приборный отсек (золотой/титановый композит)
-    const busGeo = new THREE.BoxGeometry(0.032, 0.032, 0.045);
+    // 1. Центральный приборный корпус
+    const busGeo = new THREE.BoxGeometry(0.035, 0.035, 0.05);
     const busMat = new THREE.MeshStandardMaterial({
-      color: 0x22354c,
+      color: 0x273b54,
       metalness: 0.85,
       roughness: 0.2,
-      emissive: 0x0f2238,
+      emissive: 0x0e2035,
       emissiveIntensity: 0.5
     });
     const busMesh = new THREE.Mesh(busGeo, busMat);
     satGroup.add(busMesh);
 
     // 2. Панели солнечных батарей (левая и правая)
-    const panelGeo = new THREE.BoxGeometry(0.075, 0.003, 0.03);
+    const panelGeo = new THREE.BoxGeometry(0.08, 0.003, 0.032);
     const panelMat = new THREE.MeshStandardMaterial({
-      color: 0x1e40af,
-      metalness: 0.9,
+      color: 0x1d4ed8,
+      metalness: 0.92,
       roughness: 0.1,
-      emissive: 0x1d4ed8,
-      emissiveIntensity: 0.35
+      emissive: 0x1e40af,
+      emissiveIntensity: 0.4
     });
 
     const leftPanel = new THREE.Mesh(panelGeo, panelMat);
-    leftPanel.position.set(-0.055, 0, 0);
+    leftPanel.position.set(-0.06, 0, 0);
     satGroup.add(leftPanel);
 
     const rightPanel = new THREE.Mesh(panelGeo, panelMat);
-    rightPanel.position.set(0.055, 0, 0);
+    rightPanel.position.set(0.06, 0, 0);
     satGroup.add(rightPanel);
 
     // 3. Антенна полезной нагрузки
-    const dishGeo = new THREE.ConeGeometry(0.012, 0.015, 12);
+    const dishGeo = new THREE.ConeGeometry(0.014, 0.018, 12);
     const dishMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
     const dishMesh = new THREE.Mesh(dishGeo, dishMat);
     dishMesh.rotation.x = Math.PI;
-    dishMesh.position.set(0, -0.02, 0);
+    dishMesh.position.set(0, -0.022, 0);
     satGroup.add(dishMesh);
 
-    // 4. Неоновый светодиод состояния
-    const ledGeo = new THREE.SphereGeometry(0.012, 12, 12);
+    // 4. Неоновый светодиод состояния борта
+    const ledGeo = new THREE.SphereGeometry(0.013, 12, 12);
     const ledMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
     const ledMesh = new THREE.Mesh(ledGeo, ledMat);
-    ledMesh.position.set(0, 0.02, 0);
+    ledMesh.position.set(0, 0.022, 0);
     satGroup.add(ledMesh);
 
-    satGroup.userData = { satId, ledMat, busMat };
+    // 5. Текстовая метка спутника
+    const labelSprite = this.createBadgeSprite(satId, '#38bdf8');
+    labelSprite.position.set(0, 0.07, 0);
+    labelSprite.scale.set(0.18, 0.045, 1);
+    satGroup.add(labelSprite);
+
+    satGroup.userData = { satId, ledMat, busMat, labelSprite };
     return satGroup;
   }
 
   /**
-   * Отрисовка светящегося кольца орбиты
+   * Светящееся наклонное кольцо орбиты
    */
-  createOrbitRing(planeIndex, totalPlanes, inclinationDeg = 97.4, radius = 1.32) {
+  createOrbitRing(planeIndex, totalPlanes, inclinationDeg = 97.4, radius = 1.34) {
     const points = [];
-    const segments = 90;
+    const segments = 96;
     for (let i = 0; i <= segments; i++) {
       const theta = (i / segments) * Math.PI * 2;
       points.push(new THREE.Vector3(Math.cos(theta) * radius, 0, Math.sin(theta) * radius));
@@ -359,12 +451,11 @@ class Globe3D {
     const material = new THREE.LineBasicMaterial({
       color: 0x38bdf8,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.26,
       blending: THREE.AdditiveBlending
     });
     const ring = new THREE.LineLoop(geometry, material);
 
-    // Наклон и долгота восходящего узла
     const raan = (planeIndex * (Math.PI / totalPlanes));
     ring.rotation.x = inclinationDeg * (Math.PI / 180);
     ring.rotation.y = raan;
@@ -373,87 +464,109 @@ class Globe3D {
   }
 
   /**
-   * Обновление состояния 3D сцены на основе AppState
+   * Первичная инициализация всех 16 спутников (4 орбитальные плоскости по 4 аппарата)
+   */
+  setupSatellites() {
+    const planeCount = 4;
+    const satsPerPlane = 4;
+    const totalSats = 16;
+    const radius = 1.34;
+    const inclination = 97.4 * (Math.PI / 180); // ССО наклонение
+
+    // 1. Создаем 4 орбитальных кольца
+    this.orbitRingsGroup.clear();
+    for (let p = 0; p < planeCount; p++) {
+      const orbit = this.createOrbitRing(p, planeCount, 97.4, radius);
+      this.orbitRingsGroup.add(orbit.ring);
+    }
+
+    // 2. Создаем 16 спутников S01..S16
+    for (let idx = 0; idx < totalSats; idx++) {
+      const satNum = (idx + 1).toString().padStart(2, '0');
+      const satId = `S${satNum}`;
+
+      const planeIdx = idx % planeCount;
+      const satInPlane = Math.floor(idx / planeCount);
+      const phaseOffset = (satInPlane / satsPerPlane) * Math.PI * 2;
+      const raan = planeIdx * (Math.PI / planeCount);
+
+      const mesh = this.createSatelliteMesh(satId);
+      this.satellitesGroup.add(mesh);
+
+      // Орбитальная скорость для 60 FPS полета (~0.18 рад/сек)
+      const orbitSpeed = 0.16 + (planeIdx * 0.01);
+
+      this.satObjects.set(satId, {
+        satId,
+        group: mesh,
+        planeIdx,
+        phaseOffset,
+        radius,
+        inclination,
+        raan,
+        orbitSpeed,
+        currentAnomaly: phaseOffset,
+        satData: { id: satId, soc_pct: 80, temp_c: 20, available: true, last_action: 'idle' }
+      });
+    }
+  }
+
+  /**
+   * Синхронизация телеметрии и состояний аппаратов с AppState
    */
   updateState() {
     const state = window.AppState;
-    if (!state || !state.satellites) return;
+    const sats = (state && state.satellites && state.satellites.length > 0)
+      ? state.satellites
+      : null;
 
-    const sats = state.satellites;
-    const currentStep = state.step || 0;
-    const planeCount = Math.min(4, Math.ceil(sats.length / 4));
+    const currentStep = (state && state.step) || 0;
 
-    // 1. Инициализация орбит при необходимости
-    if (this.orbitRingsGroup.children.length === 0) {
-      for (let p = 0; p < planeCount; p++) {
-        const orbit = this.createOrbitRing(p, planeCount);
-        this.orbitRingsGroup.add(orbit.ring);
+    // Обновление телеметрии существующих аппаратов
+    this.satObjects.forEach((item, satId) => {
+      let sat = sats ? sats.find(s => s.id === satId) : null;
+      if (sat) {
+        item.satData = sat;
+      } else {
+        sat = item.satData;
       }
-    }
-
-    // 2. Создание или обновление спутников
-    sats.forEach((sat, idx) => {
-      let item = this.satObjects.get(sat.id);
-      if (!item) {
-        const mesh = this.createSatelliteMesh(sat.id);
-        this.satellitesGroup.add(mesh);
-
-        const planeIdx = idx % planeCount;
-        const satInPlane = Math.floor(idx / planeCount);
-        const satsInThisPlane = Math.ceil(sats.length / planeCount);
-        const phaseOffset = (satInPlane / satsInThisPlane) * Math.PI * 2;
-
-        item = {
-          group: mesh,
-          planeIdx,
-          phaseOffset,
-          radius: 1.32,
-          inclination: 97.4 * (Math.PI / 180),
-          raan: (planeIdx * (Math.PI / planeCount))
-        };
-        this.satObjects.set(sat.id, item);
-      }
-
-      // Вычисление 3D позиции вдоль орбиты
-      const orbitPeriodSteps = 18;
-      const meanAnomaly = ((currentStep % orbitPeriodSteps) / orbitPeriodSteps) * Math.PI * 2 + item.phaseOffset;
-
-      // Позиция на наклонной плоскости
-      const xOrb = Math.cos(meanAnomaly) * item.radius;
-      const zOrb = Math.sin(meanAnomaly) * item.radius;
-
-      // Применяем матрицы вращения орбиты (наклон и восходящий узел)
-      const v = new THREE.Vector3(xOrb, 0, zOrb);
-      v.applyAxisAngle(new THREE.Vector3(1, 0, 0), item.inclination);
-      v.applyAxisAngle(new THREE.Vector3(0, 1, 0), item.raan);
-
-      item.group.position.copy(v);
-      item.group.lookAt(0, 0, 0); // Панели ориентированы по касательной, антенна на Землю
 
       // Цветовая индикация состояния
       const ledMat = item.group.userData.ledMat;
+      const labelSprite = item.group.userData.labelSprite;
+
       if (ledMat) {
-        if (!sat.available) ledMat.color.setHex(0xef4444); // Отказ
-        else if (sat.soc_pct < 30) ledMat.color.setHex(0xf59e0b); // Дефицит
-        else if (sat.last_action === 'job') ledMat.color.setHex(0x10b981); // Работа
-        else if (sat.last_action === 'calibrate') ledMat.color.setHex(0xa855f7); // Калибровка
-        else ledMat.color.setHex(0x38bdf8); // Дежурный
+        if (!sat.available) {
+          ledMat.color.setHex(0xef4444); // Отказ (красный)
+          if (labelSprite) labelSprite.material.color.setHex(0xef4444);
+        } else if (sat.soc_pct < 30) {
+          ledMat.color.setHex(0xf59e0b); // Дефицит АКБ (оранжевый)
+          if (labelSprite) labelSprite.material.color.setHex(0xf59e0b);
+        } else if (sat.last_action === 'job') {
+          ledMat.color.setHex(0x10b981); // Работа над заданием (зеленый)
+          if (labelSprite) labelSprite.material.color.setHex(0x10b981);
+        } else if (sat.last_action === 'calibrate') {
+          ledMat.color.setHex(0xa855f7); // Калибровка сенсоров (фиолетовый)
+          if (labelSprite) labelSprite.material.color.setHex(0xa855f7);
+        } else {
+          ledMat.color.setHex(0x38bdf8); // Дежурный штатный режим (голубой)
+          if (labelSprite) labelSprite.material.color.setHex(0x38bdf8);
+        }
       }
 
-      // Подсветка выделенного спутника
+      // Выделенный оператором спутник
       const isSelected = sat.id === this.selectedSatId;
-      item.group.scale.setScalar(isSelected ? 1.5 : 1.0);
+      item.group.scale.setScalar(isSelected ? 1.45 : 1.0);
     });
 
-    // 3. Создание лазерных лучей и эффектов активных заданий
+    // Создание спецэффектов лучей сброса данных (Downlink) и связи (Relay)
     this.updateActionEffects();
   }
 
   /**
-   * Спецэффекты при выполнении заданий (Downlink и Relay лазеры)
+   * Создание лазерных лучей и световых эффектов при выполнении заданий
    */
   updateActionEffects() {
-    // Очищаем старые лучи
     while (this.effectsGroup.children.length > 0) {
       const obj = this.effectsGroup.children[0];
       this.effectsGroup.remove(obj);
@@ -474,15 +587,19 @@ class Globe3D {
       const kind = row.requested.kind;
 
       if (kind === 'downlink') {
-        // Луч к ближайшей наземной станции
+        // Луч к ближайшей наземной станции ППИ
         let closestGs = this.groundStationObjects[0];
         let minDist = 999;
         this.groundStationObjects.forEach(g => {
-          const d = fromPos.distanceTo(g.pos);
+          const worldGsPos = new THREE.Vector3();
+          g.beaconMesh.getWorldPosition(worldGsPos);
+          const d = fromPos.distanceTo(worldGsPos);
           if (d < minDist) { minDist = d; closestGs = g; }
         });
 
-        const toPos = closestGs.pos.clone();
+        const toPos = new THREE.Vector3();
+        closestGs.beaconMesh.getWorldPosition(toPos);
+
         this.createLaserBeam(fromPos, toPos, 0x38bdf8, 0x0ea5e9, 'downlink');
         this.triggerShockwave(toPos, 0x38bdf8);
       } else if (kind === 'relay') {
@@ -498,10 +615,9 @@ class Globe3D {
   }
 
   /**
-   * Создание пульсирующего лазерного луча с летящими фотонами
+   * Лазерный луч с летящими квантовыми фотонами
    */
   createLaserBeam(from, to, coreColor = 0x38bdf8, glowColor = 0x0ea5e9, type = 'downlink') {
-    // 1. Центральная светящаяся линия
     const lineGeo = new THREE.BufferGeometry().setFromPoints([from, to]);
     const lineMat = new THREE.LineBasicMaterial({
       color: coreColor,
@@ -513,7 +629,7 @@ class Globe3D {
     const line = new THREE.Line(lineGeo, lineMat);
     this.effectsGroup.add(line);
 
-    // 2. Частицы фотонов, бегущие по лучу
+    // Частицы фотонов
     const particleCount = 18;
     const pGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
@@ -528,9 +644,9 @@ class Globe3D {
 
     const pMat = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 0.035,
+      size: 0.038,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.92,
       blending: THREE.AdditiveBlending
     });
     const points = new THREE.Points(pGeo, pMat);
@@ -540,14 +656,14 @@ class Globe3D {
   }
 
   /**
-   * Импульсное кольцо радиозахвата на наземной станции
+   * Импульсная ударная волна захвата несущей на наземной станции
    */
   triggerShockwave(centerPos, color = 0x38bdf8) {
     const ringGeo = new THREE.RingGeometry(0.01, 0.08, 24);
     const ringMat = new THREE.MeshBasicMaterial({
       color,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.85,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending
     });
@@ -556,11 +672,11 @@ class Globe3D {
     ring.lookAt(centerPos.clone().multiplyScalar(2));
     this.effectsGroup.add(ring);
 
-    ring.userData = { isShockwave: true, scale: 1.0, opacity: 0.8 };
+    ring.userData = { isShockwave: true, scale: 1.0, opacity: 0.85 };
   }
 
   /**
-   * Управление мышью (Orbit Controls & Raycasting)
+   * Интерактивность мыши: вращение сцены, зум, клик по аппарату
    */
   initInteraction() {
     const dom = this.renderer.domElement;
@@ -586,7 +702,6 @@ class Globe3D {
 
         this.targetRotation.y += deltaX * 0.007;
         this.targetRotation.x += deltaY * 0.007;
-        // Ограничение наклона
         this.targetRotation.x = Math.max(-1.4, Math.min(1.4, this.targetRotation.x));
 
         this.previousMousePosition = { x: e.clientX, y: e.clientY };
@@ -599,7 +714,7 @@ class Globe3D {
       this.targetDistance = Math.max(2.2, Math.min(6.5, this.targetDistance));
     }, { passive: false });
 
-    // Клик по спутнику
+    // Клик по спутнику открывает авионику
     dom.addEventListener('click', (e) => {
       const satHit = this.checkSatIntersection();
       if (satHit) {
@@ -644,34 +759,64 @@ class Globe3D {
     this.autoRotate = !this.autoRotate;
   }
 
+  toggleFlight() {
+    this.isFlightRunning = !this.isFlightRunning;
+    return this.isFlightRunning;
+  }
+
+  setSpeedMultiplier(speed) {
+    this.flightSpeedMultiplier = speed;
+  }
+
   /**
-   * Основной цикл анимации (60 FPS)
+   * Непрерывный 60 FPS цикл анимации
    */
   animate() {
     requestAnimationFrame(this.animate);
 
     const delta = this.clock.getDelta();
 
-    // 1. Авто-вращение Земли
+    // 1. Авто-вращение сцены оператора
     if (this.autoRotate) {
       this.targetRotation.y += 0.0018;
     }
 
-    // 2. Плавная интерполяция вращения и зума (Damping)
+    // Плавная интерполяция вращения и зума
     this.currentRotation.x += (this.targetRotation.x - this.currentRotation.x) * 0.08;
     this.currentRotation.y += (this.targetRotation.y - this.currentRotation.y) * 0.08;
     this.currentDistance += (this.targetDistance - this.currentDistance) * 0.08;
 
-    this.earthGroup.rotation.x = this.currentRotation.x;
-    this.earthGroup.rotation.y = this.currentRotation.y;
+    this.worldGroup.rotation.x = this.currentRotation.x;
+    this.worldGroup.rotation.y = this.currentRotation.y;
     this.camera.position.z = this.currentDistance;
 
-    // 3. Анимация фотонных частиц по лазерным лучам
+    // 2. Суточное вращение Земли вокруг своей оси
+    this.earthSpinGroup.rotation.y += delta * 0.05;
+
+    // 3. НЕПРЕРЫВНЫЙ 60-FPS ПОЛЁТ ВСЕХ 16 СПУТНИКОВ ПО ОРБИТАМ
+    this.satObjects.forEach(item => {
+      if (this.isFlightRunning) {
+        item.currentAnomaly += item.orbitSpeed * this.flightSpeedMultiplier * delta;
+      }
+
+      // Вычисление пространственной 3D позиции
+      const xOrb = Math.cos(item.currentAnomaly) * item.radius;
+      const zOrb = Math.sin(item.currentAnomaly) * item.radius;
+
+      const v = new THREE.Vector3(xOrb, 0, zOrb);
+      v.applyAxisAngle(new THREE.Vector3(1, 0, 0), item.inclination);
+      v.applyAxisAngle(new THREE.Vector3(0, 1, 0), item.raan);
+
+      item.group.position.copy(v);
+      item.group.lookAt(0, 0, 0); // Антенна ориентирована на центр Земли
+    });
+
+    // 4. Анимация бегущих фотонов по лазерным лучам
     const nowSec = this.clock.getElapsedTime();
     this.activeLinks.forEach(link => {
       const posAttr = link.points.geometry.attributes.position;
       const count = posAttr.count;
-      link.offset = (link.offset + delta * 1.8) % 1;
+      link.offset = (link.offset + delta * 2.0) % 1;
 
       for (let i = 0; i < count; i++) {
         const pFrac = ((i / count) + link.offset) % 1;
@@ -685,7 +830,7 @@ class Globe3D {
       posAttr.needsUpdate = true;
     });
 
-    // 4. Анимация ударных волн на наземных станциях
+    // 5. Ударные волны на наземных станциях
     this.effectsGroup.children.forEach(child => {
       if (child.userData && child.userData.isShockwave) {
         child.userData.scale += delta * 1.5;
@@ -698,7 +843,7 @@ class Globe3D {
       }
     });
 
-    // 5. Пульсация колец наземных станций
+    // 6. Пульсация колец наземных станций
     this.groundStationObjects.forEach((g, idx) => {
       const pulse = Math.sin(nowSec * 3 + idx) * 0.15 + 0.95;
       g.ringMesh.scale.setScalar(pulse);
