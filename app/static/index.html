@@ -33,6 +33,11 @@
       <path d="m16 8 3-3"></path>
       <path d="M9 21a6 6 0 0 0-6-6"></path>
     </symbol>
+    <symbol id="icon-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="2" y1="12" x2="22" y2="12"></line>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+    </symbol>
     <symbol id="icon-play" viewBox="0 0 24 24" fill="currentColor">
       <polygon points="5 3 19 12 5 21 5 3"></polygon>
     </symbol>
@@ -314,7 +319,11 @@
     <!-- РАБОЧИЕ ВКЛАДКИ -->
     <section class="tabs-container">
       <div class="tabs-nav">
-        <button class="nav-tab active" data-tab="tabSatellites">
+        <button class="nav-tab active" data-tab="tabMap">
+          <svg class="tab-icon"><use href="#icon-globe"></use></svg>
+          <span>Карта орбит и радиоокна</span>
+        </button>
+        <button class="nav-tab" data-tab="tabSatellites">
           <svg class="tab-icon"><use href="#icon-satellite"></use></svg>
           <span>Аппараты и телеметрия (<span id="satCount">16</span>)</span>
         </button>
@@ -328,12 +337,50 @@
         </button>
         <button class="nav-tab" data-tab="tabLastStep">
           <svg class="tab-icon"><use href="#icon-clock"></use></svg>
-          <span>Журнал последнего шага</span>
+          <span>Журнал шага</span>
+        </button>
+        <button class="nav-tab" data-tab="tabFlightLog">
+          <svg class="tab-icon"><use href="#icon-activity"></use></svg>
+          <span>Журнал полета (Flight Log)</span>
         </button>
       </div>
 
-      <!-- ВКЛАДКА 1: СПУТНИКИ -->
-      <div class="tab-pane active" id="tabSatellites">
+      <!-- ВКЛАДКА 1: ОПЕРАТИВНАЯ КАРТА ОРБИТ И МАТРИЦА ГАНТА (ЦУП) -->
+      <div class="tab-pane active" id="tabMap">
+        <!-- 2D КАРТА ЗЕМЛИ -->
+        <div class="orbital-map-panel">
+          <div class="orbital-map-header">
+            <div class="map-title-group">
+              <svg style="width:16px;height:16px; color:var(--cyan-bright);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              <span>ОПЕРАТИВНАЯ КАРТА ОРБИТ И ПОДСВЕТКА СВЯЗИ (GROUND TRACKS & RF LINKS)</span>
+            </div>
+            <div class="map-status-badges">
+              <span class="map-pip-badge"><span class="map-pip" style="background:#38bdf8;"></span> ППИ-1 (Дубна)</span>
+              <span class="map-pip-badge"><span class="map-pip" style="background:#10b981;"></span> ППИ-2 (Восточный)</span>
+              <span class="map-pip-badge"><span class="map-pip" style="background:#f59e0b;"></span> Солнечный терминатор</span>
+              <span class="map-pip-badge"><span class="map-pip" style="background:#d946ef;"></span> Relay Link</span>
+            </div>
+          </div>
+          <div class="map-canvas-container">
+            <canvas id="orbitalMapCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- МАТРИЦА РАДИООКОН И ПРОХОДОВ ГАНТА -->
+        <div class="gantt-panel">
+          <div class="orbital-map-header" style="background:transparent; padding:0 0 10px 0; border:none;">
+            <div class="map-title-group" style="font-size:12px;">
+              <svg style="width:14px;height:14px; color:var(--cyan-bright);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <span>МАТРИЦА РАДИООКОН СВЯЗИ И СОЛНЕЧНЫХ ПЕРИОДОВ (PASS & ECLIPSE SCHEDULE)</span>
+            </div>
+            <span style="font-size:11px; color:var(--text-tertiary);">Кликните по аппарату для открытия авионики</span>
+          </div>
+          <div id="passGanttContainer"></div>
+        </div>
+      </div>
+
+      <!-- ВКЛАДКА 2: СПУТНИКИ -->
+      <div class="tab-pane" id="tabSatellites">
         <div class="pane-toolbar">
           <div class="search-wrapper">
             <input type="text" id="searchSatellite" placeholder="Фильтр по ID аппарата..." class="search-input" />
@@ -495,6 +542,30 @@
               <tr><td colspan="7" class="table-empty">Шаги смены ещё не выполнялись</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- ВКЛАДКА 6: БОРТОВОЙ ЖУРНАЛ ПОЛЕТА (FLIGHT LOG) -->
+      <div class="tab-pane" id="tabFlightLog">
+        <div class="flight-log-panel">
+          <div class="flight-log-toolbar">
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="btn-pill active btn-log-filter" data-filter="all">Все подсистемы</button>
+              <button class="btn-pill btn-log-filter" data-filter="EPS">СЭП (Питание)</button>
+              <button class="btn-pill btn-log-filter" data-filter="TCS">СОТР (Тепло)</button>
+              <button class="btn-pill btn-log-filter" data-filter="COMMS">СВЯЗЬ (Каналы)</button>
+              <button class="btn-pill btn-log-filter" data-filter="PAYLOAD">ПН (Задачи)</button>
+              <button class="btn-pill btn-log-filter" data-filter="OUTAGE">ОТКАЗЫ (Алерты)</button>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="text" id="searchFlightLog" placeholder="Поиск в журнале..." class="form-input" style="max-width:180px; font-size:11.5px; height:28px;" />
+              <button class="btn btn-secondary btn-xs" id="btnExportFlightLog">Экспорт (.txt)</button>
+              <button class="btn btn-outline btn-xs" id="btnClearFlightLog">Очистить</button>
+            </div>
+          </div>
+          <div class="flight-log-stream" id="flightLogStream">
+            <div class="table-empty">Ожидание инициализации смены...</div>
+          </div>
         </div>
       </div>
     </section>
@@ -1050,6 +1121,101 @@
     </div>
   </div>
 
+  <!-- ВЫДВИЖНОЙ ПРИБОРНЫЙ ЩИТ АВИОНИКИ СПУТНИКА (SPACECRAFT AVIONICS DRAWER) -->
+  <aside class="avionics-drawer" id="avionicsDrawer">
+    <div class="avionics-drawer-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <svg class="svg-btn-icon text-accent" style="width:18px;height:18px;"><use href="#icon-satellite"></use></svg>
+        <h4 id="avionicsDrawerTitle" style="font-size:12.5px; font-weight:700; color:#fff; letter-spacing:0.04em;">БОРТ S01 · АВИОНИКА</h4>
+      </div>
+      <button class="window-close" onclick="closeAvionicsDrawer()">&times;</button>
+    </div>
+
+    <div class="avionics-drawer-body">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11px; color:var(--text-tertiary);">РЕЖИМ ПОЛЕТА:</span>
+        <span class="audit-badge audit-badge-info" id="avionicsStatusBadge">ДЕЖУРНЫЙ (NOMINAL)</span>
+      </div>
+
+      <!-- БЛОК 1: СЭП (ЭЛЕКТРОПИТАНИЕ) -->
+      <div class="hud-subsystem-card">
+        <div class="hud-card-header">
+          <span class="hud-sys-label">
+            <svg style="width:13px;height:13px; color:#f59e0b;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            1. СЭП · Электропитание и батарея
+          </span>
+          <span class="font-mono font-bold text-accent" id="avionicsSocGauge">--%</span>
+        </div>
+        <div class="hud-bar-track">
+          <div class="hud-bar-fill bg-accent" id="avionicsSocBar" style="width: 50%;"></div>
+        </div>
+        <div id="avionicsSocDetails"></div>
+        <div id="avionicsPowerFlux"></div>
+      </div>
+
+      <!-- БЛОК 2: СОТР (ТЕПЛОВОЙ РЕЖИМ) -->
+      <div class="hud-subsystem-card">
+        <div class="hud-card-header">
+          <span class="hud-sys-label">
+            <svg style="width:13px;height:13px; color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg>
+            2. СОТР · Тепловой баланс
+          </span>
+          <span class="font-mono font-bold" id="avionicsTempGauge">--°C</span>
+        </div>
+        <div class="hud-bar-track">
+          <div class="hud-bar-fill bg-accent" id="avionicsTempBar" style="width: 40%;"></div>
+        </div>
+        <div class="hud-metric-line">
+          <span>Допустимый коридор:</span>
+          <strong class="font-mono">-5.0°C .. +45.0°C</strong>
+        </div>
+        <div class="hud-metric-line">
+          <span>Бортовой термостат / обогрев:</span>
+          <span class="audit-badge audit-badge-info" id="avionicsHeaterBadge">ДЕЖУРНЫЙ</span>
+        </div>
+      </div>
+
+      <!-- БЛОК 3: ОЭК (СЕНСОРЫ И КАЛИБРОВКА) -->
+      <div class="hud-subsystem-card">
+        <div class="hud-card-header">
+          <span class="hud-sys-label">
+            <svg style="width:13px;height:13px; color:#a855f7;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="m4.93 4.93 4.24 4.24"></path><path d="m14.83 9.17 4.24-4.24"></path><path d="m14.83 14.83 4.24 4.24"></path><path d="m9.17 14.83-4.24 4.24"></path></svg>
+            3. ОЭК · Оптика и калибровка
+          </span>
+          <span class="font-mono font-bold text-accent" id="avionicsCalibAge">-- / 48 ш.</span>
+        </div>
+        <div class="hud-bar-track">
+          <div class="hud-bar-fill bg-success" id="avionicsCalibBar" style="width: 30%;"></div>
+        </div>
+        <div id="avionicsCalibStatus"></div>
+      </div>
+
+      <!-- БЛОК 4: БРТК (СВЯЗЬ И РАДИОКАНАЛЫ) -->
+      <div class="hud-subsystem-card">
+        <div class="hud-card-header">
+          <span class="hud-sys-label">
+            <svg style="width:13px;height:13px; color:#10b981;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+            4. БРТК · Радиоканал связи
+          </span>
+          <span id="avionicsCarrierLock"></span>
+        </div>
+        <div class="hud-metric-line">
+          <span>Лимит параллельных станций:</span>
+          <strong class="font-mono text-gold">2 канала на группировку</strong>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:14px 20px; border-top:1px solid var(--border-medium); display:flex; justify-content:space-between; gap:10px;">
+      <button class="btn btn-secondary btn-xs" onclick="closeAvionicsDrawer()">Закрыть панель (ESC)</button>
+    </div>
+  </aside>
+
+  <!-- СКРИПТЫ СИСТЕМЫ УПРАВЛЕНИЯ -->
+  <script src="orbital_map.js"></script>
+  <script src="pass_gantt.js"></script>
+  <script src="avionics_drawer.js"></script>
+  <script src="flight_log.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -2282,6 +2282,510 @@ body {
 }
 
 /* ==========================================================================
+   ЭТАЛОННЫЙ ЦУП: 2D КАРТА ОРБИТ, ГАНТ РАДИООКОН И АВИОНИКА
+   ========================================================================== */
+
+/* 1. Интерактивная 2D карта орбит */
+.orbital-map-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.orbital-map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: rgba(11, 23, 44, 0.85);
+  border-bottom: 1px solid var(--border-light);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.map-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+
+.map-status-badges {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+}
+
+.map-pip-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+}
+
+.map-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.map-canvas-container {
+  position: relative;
+  width: 100%;
+  background: #050a15;
+  overflow: hidden;
+}
+
+#orbitalMapCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 2. Диаграмма Ганта радиоокон */
+.gantt-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  padding: 16px;
+}
+
+.gantt-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gantt-header-row {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 4px;
+}
+
+.gantt-label-col {
+  width: 90px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 10px;
+}
+
+.gantt-timeline-track {
+  flex: 1;
+  position: relative;
+  height: 100%;
+}
+
+.gantt-time-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 9.5px;
+  color: var(--text-tertiary);
+}
+
+.tick-time {
+  color: var(--text-muted);
+  font-size: 8.5px;
+}
+
+.gantt-needle {
+  position: absolute;
+  top: 0;
+  bottom: -2000px;
+  width: 2px;
+  background: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+  z-index: 20;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.needle-flag {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #38bdf8;
+  color: #000;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.gantt-rows-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  position: relative;
+}
+
+.gantt-sat-row {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.gantt-sat-row:hover {
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.gantt-sat-row.selected {
+  background: rgba(56, 189, 248, 0.12);
+  border-left: 3px solid #38bdf8;
+}
+
+.sat-soc-sub {
+  font-size: 9.5px;
+  font-weight: 600;
+}
+
+.gantt-cells-track {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(1px, 1fr));
+  height: 100%;
+  gap: 1px;
+}
+
+.gantt-cell {
+  position: relative;
+  height: 100%;
+  border-radius: 1px;
+  transition: opacity 0.1s;
+}
+
+.cell-sun {
+  background: rgba(245, 158, 11, 0.22);
+}
+
+.cell-eclipse {
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.cell-past {
+  opacity: 0.55;
+}
+
+.cell-current {
+  outline: 1.5px solid #38bdf8;
+  z-index: 10;
+}
+
+.contact-pip-downlink {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #38bdf8;
+  border-radius: 1px;
+}
+
+.contact-pip-relay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #d946ef;
+  border-radius: 1px;
+}
+
+.gantt-action-pip {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.pip-job {
+  background: rgba(16, 185, 129, 0.75);
+  color: #fff;
+}
+
+.pip-calib {
+  background: rgba(168, 85, 247, 0.75);
+  color: #fff;
+}
+
+.gantt-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-light);
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-box {
+  width: 12px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.legend-box.sun { background: rgba(245, 158, 11, 0.5); }
+.legend-box.eclipse { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.1); }
+.legend-pip { width: 8px; height: 8px; border-radius: 2px; }
+.legend-pip.downlink { background: #38bdf8; }
+.legend-pip.relay { background: #d946ef; }
+.legend-pip.job { background: #10b981; }
+.legend-pip.calib { background: #a855f7; }
+
+/* 3. Выдвижной приборный щит авионики (Spacecraft Avionics Drawer) */
+.avionics-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 440px;
+  max-width: 95vw;
+  height: 100vh;
+  background: rgba(6, 10, 20, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.75);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(105%);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.avionics-drawer.open {
+  transform: translateX(0);
+}
+
+.avionics-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(11, 23, 44, 0.9);
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.avionics-drawer-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hud-subsystem-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hud-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+}
+
+.hud-sys-label {
+  font-family: var(--font-hud);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-power-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.power-box {
+  padding: 8px 10px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.power-box.sun {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.power-box.eclipse {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.power-box.load {
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.power-lbl {
+  font-size: 9.5px;
+  color: var(--text-muted);
+}
+
+.power-val {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.hud-metric-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.hud-sub-specs {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.hud-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.hud-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.bg-accent { background: #38bdf8; }
+.bg-success { background: #10b981; }
+.bg-warning { background: #f59e0b; }
+.bg-danger { background: #ef4444; }
+
+/* 4. Хронологический журнал полетов (Flight Director Mission Log) */
+.flight-log-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.flight-log-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.flight-log-stream {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 4px;
+}
+
+.flight-log-row {
+  display: grid;
+  grid-template-columns: 140px 110px 1fr;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: var(--radius-xs);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+}
+
+.flight-log-row.log-lvl-info { border-left: 3px solid #38bdf8; }
+.flight-log-row.log-lvl-success { border-left: 3px solid #10b981; }
+.flight-log-row.log-lvl-warning { border-left: 3px solid #f59e0b; background: rgba(245, 158, 11, 0.04); }
+.flight-log-row.log-lvl-danger { border-left: 3px solid #ef4444; background: rgba(239, 68, 68, 0.06); }
+
+.log-step-tag {
+  color: var(--text-tertiary);
+  font-size: 10.5px;
+  margin-left: 4px;
+}
+
+.log-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-hud);
+}
+
+.log-eps { background: rgba(245, 158, 11, 0.15); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.3); }
+.log-tcs { background: rgba(56, 189, 248, 0.15); color: #bae6fd; border: 1px solid rgba(56, 189, 248, 0.3); }
+.log-comms { background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.3); }
+.log-payload { background: rgba(168, 85, 247, 0.15); color: #e9d5ff; border: 1px solid rgba(168, 85, 247, 0.3); }
+.log-outage { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+.log-msg-col {
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ==========================================================================
    АДАПТИВНОСТЬ И МОБИЛЬНАЯ ЭРГОНОМИКА (RESPONSIVE VIEWPORTS & MOBILE UX)
    ========================================================================== */
 
