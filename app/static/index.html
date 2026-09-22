@@ -15,6 +15,9 @@
   <!-- Chart.js для графиков (локальный бандл для 100% работы без интернета + fallback) -->
   <script src="vendor/chart.umd.min.js"></script>
   <script>if (typeof Chart === 'undefined') document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\\/script>');</script>
+  
+  <!-- Three.js для кинематографичного 3D Глобуса (100% автономный офлайн-бандл) -->
+  <script src="vendor/three.min.js"></script>
 </head>
 <body>
 
@@ -321,7 +324,7 @@
       <div class="tabs-nav">
         <button class="nav-tab active" data-tab="tabMap">
           <svg class="tab-icon"><use href="#icon-globe"></use></svg>
-          <span>Карта орбит и радиоокна</span>
+          <span>3D Глобус и радиоокна</span>
         </button>
         <button class="nav-tab" data-tab="tabSatellites">
           <svg class="tab-icon"><use href="#icon-satellite"></use></svg>
@@ -345,24 +348,32 @@
         </button>
       </div>
 
-      <!-- ВКЛАДКА 1: ОПЕРАТИВНАЯ КАРТА ОРБИТ И МАТРИЦА ГАНТА (ЦУП) -->
+      <!-- ВКЛАДКА 1: 3D ГЛОБУС ОРБИТ И МАТРИЦА ГАНТА (ЦУП) -->
       <div class="tab-pane active" id="tabMap">
-        <!-- 2D КАРТА ЗЕМЛИ -->
+        <!-- 3D ГЛОБУС ОРБИТ И ВИЗУАЛИЗАЦИЯ СВЯЗИ (3D MISSION GLOBE) -->
         <div class="orbital-map-panel">
           <div class="orbital-map-header">
             <div class="map-title-group">
               <svg style="width:16px;height:16px; color:var(--cyan-bright);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-              <span>ОПЕРАТИВНАЯ КАРТА ОРБИТ И ПОДСВЕТКА СВЯЗИ (GROUND TRACKS & RF LINKS)</span>
+              <span>3D ГЛОБУС ОРБИТ И ПОДСВЕТКА СВЯЗИ (3D MISSION GLOBE)</span>
             </div>
             <div class="map-status-badges">
               <span class="map-pip-badge"><span class="map-pip" style="background:#38bdf8;"></span> ППИ-1 (Дубна)</span>
               <span class="map-pip-badge"><span class="map-pip" style="background:#10b981;"></span> ППИ-2 (Восточный)</span>
-              <span class="map-pip-badge"><span class="map-pip" style="background:#f59e0b;"></span> Солнечный терминатор</span>
-              <span class="map-pip-badge"><span class="map-pip" style="background:#d946ef;"></span> Relay Link</span>
+              <span class="map-pip-badge"><span class="map-pip" style="background:#38bdf8;"></span> Лазер Downlink</span>
+              <span class="map-pip-badge"><span class="map-pip" style="background:#e879f9;"></span> Межспутниковый Relay</span>
             </div>
           </div>
-          <div class="map-canvas-container">
-            <canvas id="orbitalMapCanvas"></canvas>
+          <div class="map-canvas-container" style="position:relative; width:100%; height:480px; min-height:480px;">
+            <div id="globe3dContainer" style="width:100%; height:100%; position:relative; background:#030712; border-radius:6px; overflow:hidden;"></div>
+            <!-- Плавающие 3D контролы -->
+            <div class="globe-overlay-controls" style="position:absolute; bottom:14px; left:14px; z-index:20; display:flex; gap:8px; pointer-events:auto;">
+              <button class="btn btn-xs btn-secondary" id="btnGlobeAutoRotate" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(6px); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; font-family:'JetBrains Mono',monospace;">🔄 Авто-вращение</button>
+              <button class="btn btn-xs btn-secondary" id="btnGlobeResetView" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.15); color:var(--text-secondary); font-family:'JetBrains Mono',monospace;">🎯 Сброс вида</button>
+            </div>
+            <div class="globe-hud-tip" style="position:absolute; bottom:14px; right:14px; z-index:20; font-size:11px; color:var(--text-tertiary); font-family:'JetBrains Mono',monospace; background:rgba(15,23,42,0.7); padding:4px 8px; border-radius:4px; pointer-events:none;">
+              ЛКМ: Вращение · Колесо: Зум · Клик по аппарату: Авионика
+            </div>
           </div>
         </div>
 
@@ -1212,6 +1223,7 @@
   </aside>
 
   <!-- СКРИПТЫ СИСТЕМЫ УПРАВЛЕНИЯ -->
+  <script src="globe_3d.js"></script>
   <script src="orbital_map.js"></script>
   <script src="pass_gantt.js"></script>
   <script src="avionics_drawer.js"></script>
